@@ -444,7 +444,7 @@ int main()
     cpu.reset(memory);
     check(cpu.step(memory, error), "LDX prepares indexed absolute BIT");
     check(cpu.step(memory, error), "LDA prepares indexed absolute BIT");
-    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x80U,
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0xC0U,
           "8-bit BIT absolute,X reads from the indexed address and updates N and V");
 
     loadProgram(memory, {
