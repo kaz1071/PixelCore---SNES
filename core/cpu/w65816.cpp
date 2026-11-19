@@ -147,6 +147,57 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x2D: // AND absolute
+    case 0x0D: // ORA absolute
+    case 0x4D: { // EOR absolute
+        const std::uint16_t address16 = fetch16(memory);
+        const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
+        std::uint16_t operand = memory.read8(bankBase | address16);
+        if (!accumulator8) {
+            const auto nextAddress = static_cast<std::uint16_t>(address16 + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(memory.read8(bankBase | nextAddress)) << 8U)
+            );
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result = opcode == 0x2D
+            ? static_cast<std::uint16_t>(value & operand)
+            : (opcode == 0x0D
+                ? static_cast<std::uint16_t>(value | operand)
+                : static_cast<std::uint16_t>(value ^ operand));
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
+    case 0x3D: // AND absolute,X
+    case 0x1D: // ORA absolute,X
+    case 0x5D: { // EOR absolute,X
+        const std::uint16_t baseAddress = fetch16(memory);
+        const std::uint16_t address16 = static_cast<std::uint16_t>(baseAddress + registers_.x);
+        const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
+        std::uint16_t operand = memory.read8(bankBase | address16);
+        if (!accumulator8) {
+            const auto nextAddress = static_cast<std::uint16_t>(address16 + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(memory.read8(bankBase | nextAddress)) << 8U)
+            );
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result = opcode == 0x3D
+            ? static_cast<std::uint16_t>(value & operand)
+            : (opcode == 0x1D
+                ? static_cast<std::uint16_t>(value | operand)
+                : static_cast<std::uint16_t>(value ^ operand));
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0x89: { // BIT immediate (65C816)
         const std::uint16_t operand = accumulator8 ? fetch8(memory) : fetch16(memory);
         const bool zero = (registers_.a & operand & accumulatorMask) == 0;
