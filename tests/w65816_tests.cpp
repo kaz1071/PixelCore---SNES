@@ -396,5 +396,44 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x02U) != 0,
           "16-bit BIT immediate sets zero when no masked bits overlap");
 
+
+    loadProgram(memory, {
+        0xA9, 0xF0,       // LDA #$F0
+        0x2C, 0x00, 0x10, // BIT $1000
+        0x2C, 0x00, 0x10  // BIT $1000 again
+    });
+    memory.write8(0x001000, 0xC0);
+    cpu.reset(memory);
+    auto bitAbs8 = cpu.registers();
+    bitAbs8.p = static_cast<std::uint8_t>(bitAbs8.p | 0x01U);
+    cpu.setRegisters(bitAbs8);
+    check(cpu.step(memory, error), "LDA prepares 8-bit absolute BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC3U) == 0xC1U,
+          "8-bit BIT absolute sets N and V from memory and clears Z");
+    memory.write8(0x001000, 0x0F);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x02U,
+          "8-bit BIT absolute sets Z when A and memory do not overlap");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0x00, 0x80,       // LDA #$8000
+        0x2C, 0x00, 0x10,       // BIT $1000
+        0x2C, 0x00, 0x10        // BIT $1000 again
+    });
+    memory.write8(0x001000, 0x00);
+    memory.write8(0x001001, 0x80);
+    cpu.reset(memory);
+    auto bitAbs16 = cpu.registers();
+    bitAbs16.emulation = false;
+    bitAbs16.p = 0x00;
+    cpu.setRegisters(bitAbs16);
+    check(cpu.step(memory, error), "REP enables 16-bit absolute BIT");
+    check(cpu.step(memory, error), "16-bit LDA prepares absolute BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x80U,
+          "16-bit BIT absolute reads both bytes and sets negative");
+    memory.write8(0x001000, 0x00);
+    memory.write8(0x001001, 0x40);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x42U,
+          "16-bit BIT absolute reads both bytes and sets overflow and zero");
     return 0;
 }
