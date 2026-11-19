@@ -1,24 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <defs>
-    <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f4f0e8"/>
-      <stop offset="1" stop-color="#b8bfd0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#563b86"/>
+      <stop offset="1" stop-color="#211b3b"/>
     </linearGradient>
-    <linearGradient id="bg" x1="0" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#34466f"/>
-      <stop offset="1" stop-color="#171d35"/>
+    <linearGradient id="console" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e5e2dc"/>
+      <stop offset="1" stop-color="#9da2ad"/>
     </linearGradient>
   </defs>
-  <rect x="10" y="10" width="236" height="236" rx="52" fill="url(#bg)"/>
-  <path d="M57 84h142c17 0 29 12 33 31l11 62c4 23-17 38-37 26l-37-22H87l-37 22c-20 12-41-3-37-26l11-62c4-19 16-31 33-31z" fill="#11172a" opacity=".45" transform="translate(2 8)"/>
-  <path d="M57 77h142c17 0 29 12 33 31l11 62c4 23-17 38-37 26l-37-22H87l-37 22c-20 12-41-3-37-26l11-62c4-19 16-31 33-31z" fill="url(#shell)" stroke="#f8f7f2" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M43 132h54M70 105v54" stroke="#35415e" stroke-width="17" stroke-linecap="round"/>
-  <circle cx="166" cy="119" r="12" fill="#c84d58"/>
-  <circle cx="193" cy="143" r="12" fill="#4e78bd"/>
-  <circle cx="139" cy="143" r="12" fill="#4e936f"/>
-  <circle cx="166" cy="167" r="12" fill="#d3a64b"/>
-  <rect x="106" y="190" width="22" height="7" rx="3.5" fill="#737b90"/>
-  <rect x="133" y="190" width="22" height="7" rx="3.5" fill="#737b90"/>
-  <text x="128" y="52" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="800" letter-spacing="3" fill="#fff">PIXELCORE</text>
-  <text x="128" y="222" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="700" letter-spacing="4" fill="#e8edf8">SNES</text>
+  <rect x="10" y="10" width="236" height="236" rx="48" fill="url(#bg)"/>
+  <text x="128" y="43" text-anchor="middle" font-family="sans-serif" font-size="19" font-weight="800" letter-spacing="2.5" fill="#fff">PIXELCORE</text>
+  <g transform="translate(0 5)">
+    <path d="M54 78 Q54 68 66 68 H190 Q202 68 202 80 L214 163 Q216 180 198 180 H58 Q40 180 42 163 Z" fill="#171529" opacity=".45" transform="translate(0 8)"/>
+    <path d="M54 74 Q54 64 66 64 H190 Q202 64 202 76 L214 159 Q216 176 198 176 H58 Q40 176 42 159 Z" fill="url(#console)" stroke="#f7f4ee" stroke-width="3"/>
+    <path d="M72 83 H184 L191 126 H65 Z" fill="#777d8c" stroke="#626879" stroke-width="2"/>
+    <path d="M88 88 H168 L172 117 H84 Z" fill="#302b45"/>
+    <path d="M96 92 H160 L162 111 H94 Z" fill="#171525"/>
+    <rect x="104" y="132" width="48" height="7" rx="3.5" fill="#555b6b"/>
+    <rect x="65" y="143" width="35" height="15" rx="7.5" fill="#6e4b9d" stroke="#49336d" stroke-width="2"/>
+    <rect x="156" y="143" width="35" height="15" rx="7.5" fill="#6e4b9d" stroke="#49336d" stroke-width="2"/>
+    <circle cx="112" cy="163" r="4" fill="#b54d59"/>
+    <circle cx="128" cy="163" r="4" fill="#69a078"/>
+    <circle cx="144" cy="163" r="4" fill="#d4ad54"/>
+  </g>
+  <text x="128" y="218" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="900" letter-spacing="5" fill="#f0eafa">SNES</text>
 </svg>
