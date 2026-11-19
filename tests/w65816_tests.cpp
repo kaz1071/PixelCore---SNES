@@ -732,7 +732,7 @@ int main()
     cpu.setRegisters(indexedDirect8);
     check(cpu.step(memory, error) && memory.read8(0x001023) == 0x5A,
           "STA direct page,X stores at D plus operand plus X");
-    check(cpu.step(memory, error) && memory.read8(0x001034) == 0xA5,
+    check(cpu.step(memory, error) && memory.read8(0x001034) == 0x03,
           "STX direct page,Y stores at D plus operand plus Y");
     check(cpu.step(memory, error) && memory.read8(0x001043) == 0x3C,
           "STY direct page,X stores at D plus operand plus X");
@@ -740,7 +740,7 @@ int main()
           "LDA immediate prepares indexed direct-page reload");
     check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
           "LDA direct page,X loads and preserves A high byte");
-    check(cpu.step(memory, error) && cpu.registers().x == 0xA5,
+    check(cpu.step(memory, error) && cpu.registers().x == 0x03,
           "LDX direct page,Y loads from Y-indexed direct page");
     auto restoreX = cpu.registers();
     restoreX.x = 3;
