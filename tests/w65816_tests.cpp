@@ -573,6 +573,60 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x7F0F,
           "EOR direct page reads both bytes and updates negative");
 
+    loadProgram(memory, {
+        0xA9, 0xF0,       // LDA #$F0
+        0x35, 0x20,       // AND $20,X
+        0x15, 0x21,       // ORA $21,X
+        0x55, 0x22        // EOR $22,X
+    });
+    memory.write8(0x001023, 0x3C);
+    memory.write8(0x001024, 0x80);
+    memory.write8(0x001025, 0xFF);
+    cpu.reset(memory);
+    auto directPageIndexed8 = cpu.registers();
+    directPageIndexed8.a = 0xAB00;
+    directPageIndexed8.d = 0x1000;
+    directPageIndexed8.x = 3;
+    cpu.setRegisters(directPageIndexed8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABF0,
+          "LDA prepares 8-bit direct-page indexed logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB30,
+          "AND direct page,X adds D and X and preserves A high byte");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABB0,
+          "ORA direct page,X reads the indexed direct-page operand");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB4F,
+          "EOR direct page,X updates the accumulator");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0xF0, 0x0F,       // LDA #$0FF0
+        0x35, 0x10,             // AND $10,X
+        0x15, 0x12,             // ORA $12,X
+        0x55, 0x14              // EOR $14,X
+    });
+    memory.write8(0x001012, 0xF0);
+    memory.write8(0x001013, 0x00);
+    memory.write8(0x001014, 0x00);
+    memory.write8(0x001015, 0x80);
+    memory.write8(0x001016, 0xFF);
+    memory.write8(0x001017, 0xFF);
+    cpu.reset(memory);
+    auto directPageIndexed16 = cpu.registers();
+    directPageIndexed16.emulation = false;
+    directPageIndexed16.p = 0x00;
+    directPageIndexed16.d = 0x1000;
+    directPageIndexed16.x = 2;
+    cpu.setRegisters(directPageIndexed16);
+    check(cpu.step(memory, error), "REP enables 16-bit direct-page indexed logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0FF0,
+          "16-bit LDA prepares direct-page indexed logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00F0,
+          "AND direct page,X reads both indexed operand bytes");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x80F0,
+          "ORA direct page,X updates the 16-bit negative flag");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x7F0F,
+          "EOR direct page,X reads both bytes and updates negative");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
