@@ -306,6 +306,60 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x7FFF &&
           (cpu.registers().p & 0x80U) == 0,
           "16-bit EOR immediate updates the 16-bit negative flag");
+    loadProgram(memory, {
+        0xA9, 0x80, // LDA #$80
+        0xC9, 0x7F, // CMP #$7F
+        0xC9, 0xFF, // CMP #$FF
+        0xC9, 0x80, // CMP #$80
+        0xA2, 0x20, // LDX #$20
+        0xE0, 0x21, // CPX #$21
+        0xA0, 0x00, // LDY #$00
+        0xC0, 0x00  // CPY #$00
+    });
+    cpu.reset(memory);
+    check(cpu.step(memory, error), "LDA prepares 8-bit CMP");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) != 0 &&
+          (cpu.registers().p & 0x80U) == 0,
+          "CMP sets carry when accumulator is greater and clears negative");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) == 0 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "CMP clears carry and sets negative when accumulator is smaller");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP sets carry and zero for equal operands");
+    check(cpu.step(memory, error), "LDX prepares 8-bit CPX");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) == 0 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "CPX compares index register and updates carry and negative");
+    check(cpu.step(memory, error), "LDY prepares 8-bit CPY");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPY sets carry and zero for equal index values");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xA9, 0x00, 0x80,       // LDA #$8000
+        0xC9, 0xFF, 0x7F,       // CMP #$7FFF
+        0xA2, 0x34, 0x12,       // LDX #$1234
+        0xE0, 0x35, 0x12,       // CPX #$1235
+        0xA0, 0x56, 0x34,       // LDY #$3456
+        0xC0, 0x56, 0x34        // CPY #$3456
+    });
+    cpu.reset(memory);
+    auto compare16 = cpu.registers();
+    compare16.emulation = false;
+    compare16.p = 0x00;
+    cpu.setRegisters(compare16);
+    check(cpu.step(memory, error), "REP enables 16-bit comparison widths");
+    check(cpu.step(memory, error), "16-bit LDA prepares CMP");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) != 0 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "16-bit CMP compares both bytes and sets carry and negative");
+    check(cpu.step(memory, error), "16-bit LDX prepares CPX");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) == 0 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "16-bit CPX compares both index bytes");
+    check(cpu.step(memory, error), "16-bit LDY prepares CPY");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "16-bit CPY sets carry and zero for equal operands");
     std::cout << "All 65C816 tests passed.\n";
     return 0;
 }
