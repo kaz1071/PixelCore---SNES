@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PixelCore-SNES
+GenericName=Super Nintendo Emulator
+Comment=Play Super Nintendo games
+Exec=pixelcore-snes %f
+Icon=pixelcore-snes
+Terminal=false
+Categories=Game;Emulator;Qt;
+MimeType=application/x-sfc;application/x-smc;
+StartupNotify=true
