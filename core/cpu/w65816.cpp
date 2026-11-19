@@ -102,6 +102,25 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
         return true;
     }
+    case 0xC9: // CMP immediate
+    case 0xE0: // CPX immediate
+    case 0xC0: { // CPY immediate
+        const bool accumulatorCompare = opcode == 0xC9;
+        const std::uint16_t mask = accumulatorCompare ? accumulatorMask : indexMask;
+        const std::uint16_t sign = accumulatorCompare ? accumulatorSign : indexSign;
+        const std::uint16_t operand = accumulatorCompare
+            ? (accumulator8 ? fetch8(memory) : fetch16(memory))
+            : (index8 ? fetch8(memory) : fetch16(memory));
+        const std::uint16_t value = accumulatorCompare
+            ? static_cast<std::uint16_t>(registers_.a & mask)
+            : (opcode == 0xE0 ? registers_.x : registers_.y);
+        const std::uint16_t result = static_cast<std::uint16_t>((value - operand) & mask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U)
+        );
+        setNegativeZero(registers_.p, result, mask, sign);
+        return true;
+    }
     case 0x18: // CLC
         registers_.p = static_cast<std::uint8_t>(registers_.p & ~Carry);
         return true;
