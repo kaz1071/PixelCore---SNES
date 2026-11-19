@@ -39,6 +39,14 @@ install(TARGETS pixelcore-snes
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+install(FILES packaging/pixelcore-snes.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+install(FILES packaging/pixelcore-snes.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+)
+
 include(CTest)
 
 if(BUILD_TESTING)
