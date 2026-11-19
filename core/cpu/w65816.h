@@ -23,7 +23,7 @@ public:
     };
 
     void reset(const SnesMemory& memory);
-    [[nodiscard]] bool step(const SnesMemory& memory, std::string& error);
+    [[nodiscard]] bool step(SnesMemory& memory, std::string& error);
 
     [[nodiscard]] const Registers& registers() const;
     void setRegisters(const Registers& registers);
