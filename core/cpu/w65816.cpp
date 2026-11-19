@@ -128,6 +128,32 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x35: // AND direct page,X
+    case 0x15: // ORA direct page,X
+    case 0x55: { // EOR direct page,X
+        const std::uint16_t directAddress = static_cast<std::uint16_t>(
+            registers_.d + fetch8(memory) + registers_.x
+        );
+        std::uint16_t operand = memory.read8(directAddress);
+        if (!accumulator8) {
+            const auto nextAddress = static_cast<std::uint16_t>(directAddress + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(memory.read8(nextAddress)) << 8U)
+            );
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result = opcode == 0x35
+            ? static_cast<std::uint16_t>(value & operand)
+            : (opcode == 0x15
+                ? static_cast<std::uint16_t>(value | operand)
+                : static_cast<std::uint16_t>(value ^ operand));
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0x2C: { // BIT absolute
         const std::uint16_t address16 = fetch16(memory);
         const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
