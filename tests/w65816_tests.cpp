@@ -435,5 +435,36 @@ int main()
     memory.write8(0x001001, 0x40);
     check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x42U,
           "16-bit BIT absolute reads both bytes and sets overflow and zero");
+    loadProgram(memory, {
+        0xA2, 0x04,       // LDX #$04
+        0xA9, 0xF0,       // LDA #$F0
+        0x3C, 0x00, 0x10  // BIT $1000,X
+    });
+    memory.write8(0x001004, 0xC0);
+    cpu.reset(memory);
+    check(cpu.step(memory, error), "LDX prepares indexed absolute BIT");
+    check(cpu.step(memory, error), "LDA prepares indexed absolute BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x80U,
+          "8-bit BIT absolute,X reads from the indexed address and updates N and V");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xA2, 0x04, 0x00,       // LDX #$0004
+        0xA9, 0x00, 0x80,       // LDA #$8000
+        0x3C, 0x00, 0x10        // BIT $1000,X
+    });
+    memory.write8(0x001004, 0x00);
+    memory.write8(0x001005, 0x80);
+    cpu.reset(memory);
+    auto bitIndexed16 = cpu.registers();
+    bitIndexed16.emulation = false;
+    bitIndexed16.p = 0x00;
+    cpu.setRegisters(bitIndexed16);
+    check(cpu.step(memory, error), "REP enables 16-bit indexed BIT");
+    check(cpu.step(memory, error), "16-bit LDX prepares indexed BIT");
+    check(cpu.step(memory, error), "16-bit LDA prepares indexed BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0xC2U) == 0x80U,
+          "16-bit BIT absolute,X reads both bytes at the indexed address");
+    std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
