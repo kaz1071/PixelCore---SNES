@@ -65,7 +65,10 @@ int main()
     check(cpu.step(memory, error) && !(cpu.registers().p & 0x04U), "CLI clears interrupt disable");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x08U), "SED sets decimal mode");
     check(cpu.step(memory, error) && !(cpu.registers().p & 0x08U), "CLD clears decimal mode");
-    cpu.setRegisters(W65816::Registers{.p = 0x74, .emulation = false});
+    auto clearOverflow = cpu.registers();
+    clearOverflow.p = 0x74;
+    clearOverflow.emulation = false;
+    cpu.setRegisters(clearOverflow);
     check(cpu.step(memory, error) && !(cpu.registers().p & 0x40U), "CLV clears overflow");
 
     loadProgram(memory, {
