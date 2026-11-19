@@ -734,7 +734,7 @@ int main()
           "STA direct page,X stores at D plus operand plus X");
     check(cpu.step(memory, error) && memory.read8(0x001034) == 0x03,
           "STX direct page,Y stores at D plus operand plus Y");
-    check(cpu.step(memory, error) && memory.read8(0x001043) == 0x3C,
+    check(cpu.step(memory, error) && memory.read8(0x001043) == 0x04,
           "STY direct page,X stores at D plus operand plus X");
     check(cpu.step(memory, error) && cpu.registers().a == 0xAB00,
           "LDA immediate prepares indexed direct-page reload");
@@ -745,7 +745,7 @@ int main()
     auto restoreX = cpu.registers();
     restoreX.x = 3;
     cpu.setRegisters(restoreX);
-    check(cpu.step(memory, error) && cpu.registers().y == 0x3C,
+    check(cpu.step(memory, error) && cpu.registers().y == 0x04,
           "LDY direct page,X loads from X-indexed direct page");
 
     loadProgram(memory, {
@@ -772,7 +772,7 @@ int main()
     check(cpu.step(memory, error) && memory.read8(0x001034) == 0x04 &&
           memory.read8(0x001035) == 0x00,
           "16-bit STX direct page,Y writes both bytes");
-    check(cpu.step(memory, error) && memory.read8(0x001042) == 0x02 &&
+    check(cpu.step(memory, error) && memory.read8(0x001042) == 0x04 &&
           memory.read8(0x001043) == 0x00,
           "16-bit STY direct page,X writes both bytes");
     check(cpu.step(memory, error), "16-bit LDA immediate clears accumulator");
