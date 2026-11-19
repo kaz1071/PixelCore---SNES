@@ -14,8 +14,8 @@ bool SnesMemory::mapLoRom(std::uint32_t address, std::size_t& offset) const
     const auto bank = static_cast<std::uint8_t>(address >> 16U);
     const auto within_bank = static_cast<std::uint16_t>(address);
 
-    const bool rom_bank =
-        (bank <= 0x7D) || (bank >= 0x80 && bank <= 0xFF);
+    // bank is uint8_t, so every value is already <= 0xFF.
+    const bool rom_bank = (bank <= 0x7D) || (bank >= 0x80);
     if (!rom_bank || within_bank < 0x8000) {
         return false;
     }
