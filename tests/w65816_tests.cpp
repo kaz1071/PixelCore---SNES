@@ -191,6 +191,77 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
           "16-bit LDA absolute reads both bytes");
 
+    loadProgram(memory, {
+        0xA9, 0x80, // LDA #$80
+        0x0A,       // ASL A
+        0xA9, 0x01, // LDA #$01
+        0x4A,       // LSR A
+        0xA9, 0x80, // LDA #$80
+        0x38,       // SEC
+        0x2A,       // ROL A
+        0xA9, 0x01, // LDA #$01
+        0x6A,       // ROR A
+        0xA9, 0xFF, // LDA #$FF
+        0x1A,       // INC A
+        0x3A        // DEC A
+    });
+    cpu.reset(memory);
+    check(cpu.step(memory, error) && cpu.registers().a == 0x80,
+          "LDA prepares accumulator shift tests");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00 &&
+          (cpu.registers().p & 0x01U) != 0 && (cpu.registers().p & 0x02U) != 0,
+          "ASL accumulator shifts left and sets carry and zero");
+    check(cpu.step(memory, error), "LDA prepares logical right shift");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00 &&
+          (cpu.registers().p & 0x01U) != 0,
+          "LSR accumulator shifts right and sets carry");
+    check(cpu.step(memory, error), "LDA prepares rotate left");
+    check(cpu.step(memory, error), "SEC prepares rotate-left carry input");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x01 &&
+          (cpu.registers().p & 0x01U) != 0,
+          "ROL accumulator rotates carry into bit zero");
+    check(cpu.step(memory, error), "LDA prepares rotate right");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x80 &&
+          (cpu.registers().p & 0x01U) != 0,
+          "ROR accumulator rotates carry into the sign bit");
+    check(cpu.step(memory, error), "LDA prepares accumulator increment");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00 &&
+          (cpu.registers().p & 0x02U) != 0,
+          "INC accumulator wraps at 8-bit width and sets zero");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xFF &&
+          (cpu.registers().p & 0x80U) != 0,
+          "DEC accumulator wraps at 8-bit width and sets negative");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0x00, 0x80,       // LDA #$8000
+        0x0A,                   // ASL A
+        0xA9, 0x00, 0x80,       // LDA #$8000
+        0x38, 0x2A,             // SEC, ROL A
+        0xA9, 0x01, 0x00,       // LDA #$0001
+        0x6A                    // ROR A
+    });
+    cpu.reset(memory);
+    auto nativeAccumulator = cpu.registers();
+    nativeAccumulator.emulation = false;
+    nativeAccumulator.p = 0x00;
+    cpu.setRegisters(nativeAccumulator);
+    check(cpu.step(memory, error), "REP enables 16-bit accumulator for shift tests");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x8000,
+          "16-bit LDA prepares ASL");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0000 &&
+          (cpu.registers().p & 0x01U) != 0,
+          "ASL accumulator uses the 16-bit sign bit");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x8000,
+          "16-bit LDA prepares ROL");
+    check(cpu.step(memory, error) && cpu.step(memory, error) &&
+          cpu.registers().a == 0x0001 && (cpu.registers().p & 0x01U) != 0,
+          "16-bit ROL shifts through carry");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0001,
+          "16-bit LDA prepares ROR");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x8000,
+          "16-bit ROR inserts carry at bit fifteen");
+
     std::cout << "All 65C816 tests passed.\n";
     return 0;
 }
