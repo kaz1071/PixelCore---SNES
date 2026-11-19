@@ -102,6 +102,15 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
         return true;
     }
+    case 0x89: { // BIT immediate (65C816)
+        const std::uint16_t operand = accumulator8 ? fetch8(memory) : fetch16(memory);
+        const bool zero = (registers_.a & operand & accumulatorMask) == 0;
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Zero) | (zero ? Zero : 0U)
+        );
+        return true;
+    }
+
     case 0xC9: // CMP immediate
     case 0xE0: // CPX immediate
     case 0xC0: { // CPY immediate
