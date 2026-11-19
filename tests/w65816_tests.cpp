@@ -262,6 +262,50 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x8000,
           "16-bit ROR inserts carry at bit fifteen");
 
+    loadProgram(memory, {
+        0xA9, 0xF0, // LDA #$F0
+        0x29, 0x3C, // AND #$3C
+        0x09, 0x80, // ORA #$80
+        0x49, 0xFF  // EOR #$FF
+    });
+    cpu.reset(memory);
+    auto logical8 = cpu.registers();
+    logical8.a = 0xAB00;
+    cpu.setRegisters(logical8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABF0,
+          "LDA immediate preserves the accumulator high byte in 8-bit mode");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB30,
+          "AND immediate applies an 8-bit mask and preserves accumulator high byte");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABB0 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "ORA immediate sets bits and updates the negative flag");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB4F,
+          "EOR immediate toggles bits and preserves accumulator high byte");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0xF0, 0x0F,       // LDA #$0FF0
+        0x29, 0x0F, 0x00,       // AND #$000F
+        0x09, 0x00, 0x80,       // ORA #$8000
+        0x49, 0xFF, 0xFF        // EOR #$FFFF
+    });
+    cpu.reset(memory);
+    auto logical16 = cpu.registers();
+    logical16.emulation = false;
+    logical16.p = 0x00;
+    cpu.setRegisters(logical16);
+    check(cpu.step(memory, error), "REP enables 16-bit accumulator for logical tests");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0FF0,
+          "16-bit LDA prepares logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0000 &&
+          (cpu.registers().p & 0x02U) != 0,
+          "16-bit AND immediate uses both operand bytes and sets zero");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x8000 &&
+          (cpu.registers().p & 0x80U) != 0,
+          "16-bit ORA immediate updates the 16-bit negative flag");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x7FFF &&
+          (cpu.registers().p & 0x80U) == 0,
+          "16-bit EOR immediate updates the 16-bit negative flag");
     std::cout << "All 65C816 tests passed.\n";
     return 0;
 }
