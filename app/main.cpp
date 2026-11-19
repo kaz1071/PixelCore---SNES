@@ -21,12 +21,12 @@
 int main(int argc, char* argv[])
 {
     QApplication application(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("PixelCore-SNES"));
+    QApplication::setApplicationName(QStringLiteral("PixelCore - SNES"));
     QApplication::setApplicationVersion(QStringLiteral(PIXELCORE_SNES_VERSION));
     QApplication::setOrganizationName(QStringLiteral("PixelCore"));
 
     QMainWindow window;
-    window.setWindowTitle(QStringLiteral("PixelCore-SNES"));
+    window.setWindowTitle(QStringLiteral("PixelCore - SNES"));
     window.resize(1100, 720);
     window.setMinimumSize(800, 520);
 
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     QString loadedRomPath;
 
     auto* screen = new QLabel(
-        QStringLiteral("PIXELCORE-SNES\n\n"
+        QStringLiteral("PIXELCORE - SNES\n\n"
                        "No game loaded\n\n"
                        "Open a Super Nintendo ROM to get started."),
         &window
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
         memory.clear();
         loadedRomPath.clear();
         screen->setText(
-            QStringLiteral("PIXELCORE-SNES\n\n"
+            QStringLiteral("PIXELCORE - SNES\n\n"
                            "No game loaded\n\n"
                            "Open a Super Nintendo ROM to get started.")
         );
