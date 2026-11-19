@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QIcon>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
@@ -24,9 +25,14 @@ int main(int argc, char* argv[])
     QApplication::setApplicationName(QStringLiteral("PixelCore - SNES"));
     QApplication::setApplicationVersion(QStringLiteral(PIXELCORE_SNES_VERSION));
     QApplication::setOrganizationName(QStringLiteral("PixelCore"));
+    QApplication::setDesktopFileName(QStringLiteral("pixelcore-snes.desktop"));
+
+    const QIcon appIcon = QIcon::fromTheme(QStringLiteral("pixelcore-snes-v2"));
+    application.setWindowIcon(appIcon);
 
     QMainWindow window;
     window.setWindowTitle(QStringLiteral("PixelCore - SNES"));
+    window.setWindowIcon(appIcon);
     window.resize(1100, 720);
     window.setMinimumSize(800, 520);
 
