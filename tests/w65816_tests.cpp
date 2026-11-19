@@ -714,6 +714,71 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().y == 0x9ABC,
           "16-bit LDY direct page reads both bytes");
 
+    loadProgram(memory, {
+        0x95, 0x20,       // STA $20,X
+        0x96, 0x30,       // STX $30,Y
+        0x94, 0x40,       // STY $40,X
+        0xA9, 0x00,       // LDA #$00
+        0xB5, 0x20,       // LDA $20,X
+        0xB6, 0x30,       // LDX $30,Y
+        0xB4, 0x40        // LDY $40,X
+    });
+    cpu.reset(memory);
+    auto indexedDirect8 = cpu.registers();
+    indexedDirect8.a = 0xAB5A;
+    indexedDirect8.d = 0x1000;
+    indexedDirect8.x = 3;
+    indexedDirect8.y = 4;
+    cpu.setRegisters(indexedDirect8);
+    check(cpu.step(memory, error) && memory.read8(0x001023) == 0x5A,
+          "STA direct page,X stores at D plus operand plus X");
+    check(cpu.step(memory, error) && memory.read8(0x001034) == 0xA5,
+          "STX direct page,Y stores at D plus operand plus Y");
+    check(cpu.step(memory, error) && memory.read8(0x001043) == 0x3C,
+          "STY direct page,X stores at D plus operand plus X");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB00,
+          "LDA immediate prepares indexed direct-page reload");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
+          "LDA direct page,X loads and preserves A high byte");
+    check(cpu.step(memory, error) && cpu.registers().x == 0xA5,
+          "LDX direct page,Y loads from Y-indexed direct page");
+    auto restoreX = cpu.registers();
+    restoreX.x = 3;
+    cpu.setRegisters(restoreX);
+    check(cpu.step(memory, error) && cpu.registers().y == 0x3C,
+          "LDY direct page,X loads from X-indexed direct page");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0x95, 0x20,             // STA $20,X
+        0x96, 0x30,             // STX $30,Y
+        0x94, 0x40,             // STY $40,X
+        0xA9, 0x00, 0x00,       // LDA #$0000
+        0xB5, 0x20              // LDA $20,X
+    });
+    cpu.reset(memory);
+    auto indexedDirect16 = cpu.registers();
+    indexedDirect16.emulation = false;
+    indexedDirect16.p = 0x00;
+    indexedDirect16.d = 0x1000;
+    indexedDirect16.x = 2;
+    indexedDirect16.y = 4;
+    indexedDirect16.a = 0x1234;
+    cpu.setRegisters(indexedDirect16);
+    check(cpu.step(memory, error), "REP enables 16-bit indexed direct-page operations");
+    check(cpu.step(memory, error) && memory.read8(0x001022) == 0x34 &&
+          memory.read8(0x001023) == 0x12,
+          "16-bit STA direct page,X writes little-endian accumulator");
+    check(cpu.step(memory, error) && memory.read8(0x001034) == 0x78 &&
+          memory.read8(0x001035) == 0x56,
+          "16-bit STX direct page,Y writes both bytes");
+    check(cpu.step(memory, error) && memory.read8(0x001042) == 0xBC &&
+          memory.read8(0x001043) == 0x9A,
+          "16-bit STY direct page,X writes both bytes");
+    check(cpu.step(memory, error), "16-bit LDA immediate clears accumulator");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA direct page,X reads both indexed bytes");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
