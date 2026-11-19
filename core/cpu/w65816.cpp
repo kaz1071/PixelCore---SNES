@@ -124,6 +124,29 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x3C: { // BIT absolute,X
+        const std::uint16_t baseAddress = fetch16(memory);
+        const std::uint16_t address16 = static_cast<std::uint16_t>(baseAddress + registers_.x);
+        const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
+        std::uint16_t operand = memory.read8(bankBase | address16);
+        if (!accumulator8) {
+            const auto nextAddress = static_cast<std::uint16_t>(address16 + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(memory.read8(bankBase | nextAddress)) << 8U)
+            );
+        }
+        const std::uint16_t maskedOperand = operand & accumulatorMask;
+        const std::uint8_t bitFlags = static_cast<std::uint8_t>(
+            (maskedOperand & accumulatorSign ? Negative : 0U) |
+            (maskedOperand & (accumulatorSign >> 1U) ? Overflow : 0U) |
+            ((registers_.a & maskedOperand) == 0 ? Zero : 0U)
+        );
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~(Negative | Overflow | Zero)) | bitFlags
+        );
+        return true;
+    }
+
     case 0x89: { // BIT immediate (65C816)
         const std::uint16_t operand = accumulator8 ? fetch8(memory) : fetch16(memory);
         const bool zero = (registers_.a & operand & accumulatorMask) == 0;
