@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=PixelCore-SNES
+Name=PixelCore - SNES
 GenericName=Super Nintendo Emulator
 Comment=Play Super Nintendo games
 Exec=pixelcore-snes %f
