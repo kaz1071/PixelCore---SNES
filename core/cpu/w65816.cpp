@@ -201,6 +201,55 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xB5: // LDA direct page,X
+    case 0xB6: // LDX direct page,Y
+    case 0xB4: { // LDY direct page,X
+        const std::uint16_t index = opcode == 0xB6 ? registers_.y : registers_.x;
+        const std::uint16_t directAddress = static_cast<std::uint16_t>(
+            registers_.d + fetch8(memory) + index
+        );
+        const bool accumulatorLoad = opcode == 0xB5;
+        const bool narrow = accumulatorLoad ? accumulator8 : index8;
+        std::uint16_t value = memory.read8(directAddress);
+        if (!narrow) {
+            const auto nextAddress = static_cast<std::uint16_t>(directAddress + 1U);
+            value = static_cast<std::uint16_t>(
+                value | (static_cast<std::uint16_t>(memory.read8(nextAddress)) << 8U)
+            );
+        }
+        if (accumulatorLoad) {
+            registers_.a = accumulator8
+                ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | value)
+                : value;
+            setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        } else {
+            std::uint16_t& target = opcode == 0xB6 ? registers_.x : registers_.y;
+            target = value;
+            setNegativeZero(registers_.p, target, indexMask, indexSign);
+        }
+        return true;
+    }
+
+    case 0x95: // STA direct page,X
+    case 0x96: // STX direct page,Y
+    case 0x94: { // STY direct page,X
+        const std::uint16_t index = opcode == 0x96 ? registers_.y : registers_.x;
+        const std::uint16_t directAddress = static_cast<std::uint16_t>(
+            registers_.d + fetch8(memory) + index
+        );
+        const bool accumulatorStore = opcode == 0x95;
+        const bool narrow = accumulatorStore ? accumulator8 : index8;
+        const std::uint16_t value = opcode == 0x95
+            ? registers_.a
+            : (opcode == 0x96 ? registers_.x : registers_.y);
+        memory.write8(directAddress, static_cast<std::uint8_t>(value & 0x00FFU));
+        if (!narrow) {
+            const auto nextAddress = static_cast<std::uint16_t>(directAddress + 1U);
+            memory.write8(nextAddress, static_cast<std::uint8_t>(value >> 8U));
+        }
+        return true;
+    }
+
     case 0x2C: { // BIT absolute
         const std::uint16_t address16 = fetch16(memory);
         const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
