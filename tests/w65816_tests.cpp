@@ -527,13 +527,13 @@ int main()
         0x05, 0x21,       // ORA $21
         0x45, 0x22        // EOR $22
     });
-    memory.write8(0x002020, 0x3C);
-    memory.write8(0x002021, 0x80);
-    memory.write8(0x002022, 0xFF);
+    memory.write8(0x001020, 0x3C);
+    memory.write8(0x001021, 0x80);
+    memory.write8(0x001022, 0xFF);
     cpu.reset(memory);
     auto directPage8 = cpu.registers();
     directPage8.a = 0xAB00;
-    directPage8.d = 0x2000;
+    directPage8.d = 0x1000;
     cpu.setRegisters(directPage8);
     check(cpu.step(memory, error) && cpu.registers().a == 0xABF0,
           "LDA prepares 8-bit direct-page logical operations");
