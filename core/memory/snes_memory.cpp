@@ -1,6 +1,30 @@
 #include "core/memory/snes_memory.h"
 
+#include <utility>
+
 SnesMemory::SnesMemory() = default;
+
+bool SnesMemory::mapLoRom(std::uint32_t address, std::size_t& offset) const
+{
+    if (rom_.empty()) {
+        return false;
+    }
+
+    address &= 0x00FFFFFFU;
+    const auto bank = static_cast<std::uint8_t>(address >> 16U);
+    const auto within_bank = static_cast<std::uint16_t>(address);
+
+    const bool rom_bank =
+        (bank <= 0x7D) || (bank >= 0x80 && bank <= 0xFF);
+    if (!rom_bank || within_bank < 0x8000) {
+        return false;
+    }
+
+    const std::size_t bank_number = static_cast<std::size_t>(bank & 0x7FU);
+    offset = (bank_number * 0x8000U) + (within_bank & 0x7FFFU);
+    offset %= rom_.size();
+    return true;
+}
 
 std::uint8_t SnesMemory::read8(std::uint32_t address) const
 {
@@ -20,7 +44,11 @@ std::uint8_t SnesMemory::read8(std::uint32_t address) const
         return wram_[offset];
     }
 
-    // Unmapped reads currently return the SNES open-bus default.
+    std::size_t rom_offset = 0;
+    if (mapLoRom(address, rom_offset)) {
+        return rom_[rom_offset];
+    }
+
     return 0;
 }
 
@@ -44,7 +72,13 @@ void SnesMemory::write8(std::uint32_t address, std::uint8_t value)
     }
 }
 
+void SnesMemory::loadLoRom(std::vector<std::uint8_t> rom)
+{
+    rom_ = std::move(rom);
+}
+
 void SnesMemory::clear()
 {
     wram_.fill(0);
+    rom_.clear();
 }
