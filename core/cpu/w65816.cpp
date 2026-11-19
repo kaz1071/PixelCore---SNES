@@ -41,7 +41,7 @@ void W65816::reset(const SnesMemory& memory)
     );
 }
 
-bool W65816::step(const SnesMemory& memory, std::string& error)
+bool W65816::step(SnesMemory& memory, std::string& error)
 {
     error.clear();
     if (registers_.stopped) {
