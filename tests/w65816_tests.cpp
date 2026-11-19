@@ -139,6 +139,58 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().s == 0x1234, "TXS transfers X to stack pointer in native mode");
     check(cpu.step(memory, error) && cpu.registers().x == 0x1234, "TSX transfers stack pointer to X");
 
+    loadProgram(memory, {
+        0xA9, 0x5A,       // LDA #$5A
+        0x8D, 0x34, 0x12, // STA $1234
+        0xA9, 0x00,       // LDA #$00
+        0xAD, 0x34, 0x12, // LDA $1234
+        0xA2, 0xA5,       // LDX #$A5
+        0x8E, 0x35, 0x12, // STX $1235
+        0xA0, 0x3C,       // LDY #$3C
+        0x8C, 0x36, 0x12  // STY $1236
+    });
+    cpu.reset(memory);
+    auto dataBank = cpu.registers();
+    dataBank.db = 0x7E;
+    cpu.setRegisters(dataBank);
+    check(cpu.step(memory, error), "LDA immediate prepares absolute store test");
+    check(cpu.step(memory, error), "STA absolute executes");
+    check(memory.read8(0x7E1234) == 0x5A, "STA absolute writes accumulator to data bank");
+    check(cpu.step(memory, error), "LDA immediate clears accumulator before absolute load");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x5A,
+          "LDA absolute reads from data bank");
+    check(cpu.step(memory, error) && cpu.registers().x == 0xA5,
+          "LDX immediate prepares absolute index store");
+    check(cpu.step(memory, error) && memory.read8(0x7E1235) == 0xA5,
+          "STX absolute writes X to data bank");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x3C,
+          "LDY immediate prepares absolute index store");
+    check(cpu.step(memory, error) && memory.read8(0x7E1236) == 0x3C,
+          "STY absolute writes Y to data bank");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xA9, 0x34, 0x12,       // LDA #$1234
+        0x8D, 0x00, 0x20,       // STA $2000
+        0xA9, 0x00, 0x00,       // LDA #$0000
+        0xAD, 0x00, 0x20        // LDA $2000
+    });
+    cpu.reset(memory);
+    auto wideDataBank = cpu.registers();
+    wideDataBank.emulation = false;
+    wideDataBank.p = 0x00;
+    wideDataBank.db = 0x7E;
+    cpu.setRegisters(wideDataBank);
+    check(cpu.step(memory, error), "REP enables 16-bit register widths");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA immediate loads both accumulator bytes");
+    check(cpu.step(memory, error), "16-bit STA absolute executes");
+    check(memory.read8(0x7E2000) == 0x34 && memory.read8(0x7E2001) == 0x12,
+          "16-bit STA absolute writes little-endian accumulator");
+    check(cpu.step(memory, error), "16-bit LDA immediate clears accumulator");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA absolute reads both bytes");
+
     std::cout << "All 65C816 tests passed.\n";
     return 0;
 }
