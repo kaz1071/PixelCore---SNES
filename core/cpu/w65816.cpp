@@ -224,6 +224,55 @@ bool W65816::step(const SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xAD: // LDA absolute
+    case 0xAE: // LDX absolute
+    case 0xAC: { // LDY absolute
+        const std::uint16_t address16 = fetch16(memory);
+        const std::uint32_t effectiveAddress =
+            (static_cast<std::uint32_t>(registers_.db) << 16U) | address16;
+        std::uint16_t value = memory.read8(effectiveAddress);
+        if ((opcode == 0xAD && !accumulator8) ||
+            (opcode != 0xAD && !index8)) {
+            value = static_cast<std::uint16_t>(
+                value | (static_cast<std::uint16_t>(memory.read8(effectiveAddress + 1U)) << 8U)
+            );
+        }
+
+        if (opcode == 0xAD) {
+            if (accumulator8) {
+                registers_.a = static_cast<std::uint16_t>(
+                    (registers_.a & 0xFF00U) | value
+                );
+            } else {
+                registers_.a = value;
+            }
+            setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        } else {
+            std::uint16_t& target = opcode == 0xAE ? registers_.x : registers_.y;
+            target = value;
+            setNegativeZero(registers_.p, target, indexMask, indexSign);
+        }
+        return true;
+    }
+
+    case 0x8D: // STA absolute
+    case 0x8E: // STX absolute
+    case 0x8C: { // STY absolute
+        const std::uint16_t address16 = fetch16(memory);
+        const std::uint32_t effectiveAddress =
+            (static_cast<std::uint32_t>(registers_.db) << 16U) | address16;
+        const bool accumulatorStore = opcode == 0x8D;
+        const std::uint16_t value = opcode == 0x8D
+            ? registers_.a
+            : (opcode == 0x8E ? registers_.x : registers_.y);
+        const bool narrow = accumulatorStore ? accumulator8 : index8;
+        memory.write8(effectiveAddress, static_cast<std::uint8_t>(value & 0x00FFU));
+        if (!narrow) {
+            memory.write8(effectiveAddress + 1U, static_cast<std::uint8_t>(value >> 8U));
+        }
+        return true;
+    }
+
     case 0xDB: // STP
         registers_.stopped = true;
         return true;
