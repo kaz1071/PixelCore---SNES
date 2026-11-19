@@ -45,6 +45,7 @@ install(FILES packaging/pixelcore-snes.desktop
 
 install(FILES packaging/pixelcore-snes.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+    RENAME pixelcore-snes-v2.svg
 )
 
 include(CTest)
