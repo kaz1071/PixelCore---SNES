@@ -361,5 +361,40 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "16-bit CPY sets carry and zero for equal operands");
     std::cout << "All 65C816 tests passed.\n";
+    loadProgram(memory, {
+        0xA9, 0xF0,       // LDA #$F0
+        0x89, 0x0F,       // BIT #$0F: zero
+        0x89, 0x80        // BIT #$80: nonzero
+    });
+    cpu.reset(memory);
+    auto bit8 = cpu.registers();
+    bit8.p = static_cast<std::uint8_t>(bit8.p | 0xC0U);
+    cpu.setRegisters(bit8);
+    check(cpu.step(memory, error), "LDA prepares 8-bit BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x02U) != 0 &&
+          (cpu.registers().p & 0xC0U) == 0xC0U,
+          "8-bit BIT immediate sets zero and preserves negative and overflow");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x02U) == 0 &&
+          (cpu.registers().p & 0xC0U) == 0xC0U,
+          "8-bit BIT immediate clears zero when masked bits are nonzero");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0x01, 0x80,       // LDA #$8001
+        0x89, 0x00, 0x80,       // BIT #$8000: nonzero
+        0x89, 0xFE, 0x7F        // BIT #$7FFE: zero
+    });
+    cpu.reset(memory);
+    auto bit16 = cpu.registers();
+    bit16.emulation = false;
+    bit16.p = 0x00;
+    cpu.setRegisters(bit16);
+    check(cpu.step(memory, error), "REP enables 16-bit BIT width");
+    check(cpu.step(memory, error), "16-bit LDA prepares BIT");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x02U) == 0,
+          "16-bit BIT immediate tests both accumulator bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x02U) != 0,
+          "16-bit BIT immediate sets zero when no masked bits overlap");
+
     return 0;
 }
