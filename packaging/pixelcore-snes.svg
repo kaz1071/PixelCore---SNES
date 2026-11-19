@@ -1,10 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect x="8" y="8" width="112" height="112" rx="24" fill="#252b45"/>
-  <path d="M31 44c-9 0-16 8-18 21l-4 27c-1 9 8 15 16 10l23-15h36l23 15c8 5 17-1 16-10l-4-27c-2-13-9-21-18-21H31z" fill="#d8dbe8" stroke="#101426" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M31 64h25M43.5 51.5v25" stroke="#343b59" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="88" cy="59" r="6" fill="#d94d59"/>
-  <circle cx="101" cy="72" r="6" fill="#e0b34f"/>
-  <circle cx="75" cy="72" r="6" fill="#4f9b72"/>
-  <circle cx="88" cy="85" r="6" fill="#557fc4"/>
-  <text x="64" y="30" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff">SNES</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f0e8"/>
+      <stop offset="1" stop-color="#b8bfd0"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#34466f"/>
+      <stop offset="1" stop-color="#171d35"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="52" fill="url(#bg)"/>
+  <path d="M57 84h142c17 0 29 12 33 31l11 62c4 23-17 38-37 26l-37-22H87l-37 22c-20 12-41-3-37-26l11-62c4-19 16-31 33-31z" fill="#11172a" opacity=".45" transform="translate(2 8)"/>
+  <path d="M57 77h142c17 0 29 12 33 31l11 62c4 23-17 38-37 26l-37-22H87l-37 22c-20 12-41-3-37-26l11-62c4-19 16-31 33-31z" fill="url(#shell)" stroke="#f8f7f2" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M43 132h54M70 105v54" stroke="#35415e" stroke-width="17" stroke-linecap="round"/>
+  <circle cx="166" cy="119" r="12" fill="#c84d58"/>
+  <circle cx="193" cy="143" r="12" fill="#4e78bd"/>
+  <circle cx="139" cy="143" r="12" fill="#4e936f"/>
+  <circle cx="166" cy="167" r="12" fill="#d3a64b"/>
+  <rect x="106" y="190" width="22" height="7" rx="3.5" fill="#737b90"/>
+  <rect x="133" y="190" width="22" height="7" rx="3.5" fill="#737b90"/>
+  <text x="128" y="52" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="800" letter-spacing="3" fill="#fff">PIXELCORE</text>
+  <text x="128" y="222" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="700" letter-spacing="4" fill="#e8edf8">SNES</text>
 </svg>
