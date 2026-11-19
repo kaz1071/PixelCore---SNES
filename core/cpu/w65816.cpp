@@ -83,6 +83,25 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x29: // AND immediate
+    case 0x09: // ORA immediate
+    case 0x49: { // EOR immediate
+        const std::uint16_t operand = accumulator8 ? fetch8(memory) : fetch16(memory);
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        std::uint16_t result = value;
+        if (opcode == 0x29) {
+            result = static_cast<std::uint16_t>(value & operand);
+        } else if (opcode == 0x09) {
+            result = static_cast<std::uint16_t>(value | operand);
+        } else {
+            result = static_cast<std::uint16_t>(value ^ operand);
+        }
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
     case 0x18: // CLC
         registers_.p = static_cast<std::uint8_t>(registers_.p & ~Carry);
         return true;
