@@ -627,6 +627,93 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x7F0F,
           "EOR direct page,X reads both bytes and updates negative");
 
+    loadProgram(memory, {
+        0xA9, 0x5A,       // LDA #$5A
+        0x85, 0x20,       // STA $20
+        0xA9, 0x00,       // LDA #$00
+        0xA5, 0x20,       // LDA $20
+        0xA2, 0xA5,       // LDX #$A5
+        0x86, 0x21,       // STX $21
+        0xA0, 0x3C,       // LDY #$3C
+        0x84, 0x22,       // STY $22
+        0xA6, 0x21,       // LDX $21
+        0xA4, 0x22        // LDY $22
+    });
+    cpu.reset(memory);
+    auto directPageLoads8 = cpu.registers();
+    directPageLoads8.a = 0xAB00;
+    directPageLoads8.d = 0x1000;
+    cpu.setRegisters(directPageLoads8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
+          "LDA immediate prepares 8-bit direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001020) == 0x5A,
+          "STA direct page writes the accumulator");
+    check(cpu.step(memory, error), "LDA immediate clears accumulator before direct-page load");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
+          "LDA direct page loads data and preserves A high byte");
+    check(cpu.step(memory, error) && cpu.registers().x == 0xA5,
+          "LDX immediate prepares direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001021) == 0xA5,
+          "STX direct page writes X");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x3C,
+          "LDY immediate prepares direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001022) == 0x3C,
+          "STY direct page writes Y");
+    check(cpu.step(memory, error) && cpu.registers().x == 0xA5,
+          "LDX direct page loads X");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x3C,
+          "LDY direct page loads Y");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xA9, 0x34, 0x12,       // LDA #$1234
+        0x85, 0x30,             // STA $30
+        0xA2, 0x78, 0x56,       // LDX #$5678
+        0x86, 0x32,             // STX $32
+        0xA0, 0xBC, 0x9A,       // LDY #$9ABC
+        0x84, 0x34,             // STY $34
+        0xA9, 0x00, 0x00,       // LDA #$0000
+        0xA2, 0x00, 0x00,       // LDX #$0000
+        0xA0, 0x00, 0x00,       // LDY #$0000
+        0xA5, 0x30,             // LDA $30
+        0xA6, 0x32,             // LDX $32
+        0xA4, 0x34              // LDY $34
+    });
+    cpu.reset(memory);
+    auto directPageLoads16 = cpu.registers();
+    directPageLoads16.emulation = false;
+    directPageLoads16.p = 0x00;
+    directPageLoads16.d = 0x1000;
+    cpu.setRegisters(directPageLoads16);
+    check(cpu.step(memory, error), "REP enables 16-bit direct-page load and store widths");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA prepares direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001030) == 0x34 &&
+          memory.read8(0x001031) == 0x12,
+          "16-bit STA direct page writes little-endian accumulator");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x5678,
+          "16-bit LDX prepares direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001032) == 0x78 &&
+          memory.read8(0x001033) == 0x56,
+          "16-bit STX direct page writes both bytes");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x9ABC,
+          "16-bit LDY prepares direct-page store");
+    check(cpu.step(memory, error) && memory.read8(0x001034) == 0xBC &&
+          memory.read8(0x001035) == 0x9A,
+          "16-bit STY direct page writes both bytes");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0000,
+          "16-bit LDA clears accumulator before direct-page reload");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x0000,
+          "16-bit LDX clears X before direct-page reload");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x0000,
+          "16-bit LDY clears Y before direct-page reload");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA direct page reads both bytes");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x5678,
+          "16-bit LDX direct page reads both bytes");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x9ABC,
+          "16-bit LDY direct page reads both bytes");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
