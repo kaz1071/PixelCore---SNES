@@ -11,7 +11,7 @@ namespace {
 void check(bool condition, const char* message)
 {
     if (!condition) {
-        std::cerr << "FAIL: " << message << '\\n';
+        std::cerr << "FAIL: " << message << '\n';
         std::exit(1);
     }
 }
@@ -139,6 +139,6 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().s == 0x1234, "TXS transfers X to stack pointer in native mode");
     check(cpu.step(memory, error) && cpu.registers().x == 0x1234, "TSX transfers stack pointer to X");
 
-    std::cout << "All 65C816 tests passed.\\n";
+    std::cout << "All 65C816 tests passed.\n";
     return 0;
 }
