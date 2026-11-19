@@ -157,6 +157,63 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x1A: // INC A
+    case 0x3A: // DEC A
+    case 0x0A: // ASL A
+    case 0x4A: // LSR A
+    case 0x2A: // ROL A
+    case 0x6A: { // ROR A
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        std::uint16_t result = value;
+        switch (opcode) {
+        case 0x1A:
+            result = static_cast<std::uint16_t>((value + 1U) & accumulatorMask);
+            break;
+        case 0x3A:
+            result = static_cast<std::uint16_t>((value - 1U) & accumulatorMask);
+            break;
+        case 0x0A:
+            registers_.p = static_cast<std::uint8_t>(
+                (registers_.p & ~Carry) | ((value & accumulatorSign) != 0 ? Carry : 0U)
+            );
+            result = static_cast<std::uint16_t>((value << 1U) & accumulatorMask);
+            break;
+        case 0x4A:
+            registers_.p = static_cast<std::uint8_t>(
+                (registers_.p & ~Carry) | ((value & 0x0001U) != 0 ? Carry : 0U)
+            );
+            result = static_cast<std::uint16_t>(value >> 1U);
+            break;
+        case 0x2A: {
+            const bool carryIn = (registers_.p & Carry) != 0;
+            registers_.p = static_cast<std::uint8_t>(
+                (registers_.p & ~Carry) | ((value & accumulatorSign) != 0 ? Carry : 0U)
+            );
+            result = static_cast<std::uint16_t>(
+                ((value << 1U) | (carryIn ? 1U : 0U)) & accumulatorMask
+            );
+            break;
+        }
+        case 0x6A: {
+            const bool carryIn = (registers_.p & Carry) != 0;
+            registers_.p = static_cast<std::uint8_t>(
+                (registers_.p & ~Carry) | ((value & 0x0001U) != 0 ? Carry : 0U)
+            );
+            result = static_cast<std::uint16_t>(
+                (value >> 1U) | (carryIn ? accumulatorSign : 0U)
+            );
+            break;
+        }
+        default:
+            break;
+        }
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0xC2: { // REP
         const std::uint8_t mask = fetch8(memory);
         registers_.p = static_cast<std::uint8_t>(registers_.p & ~mask);
