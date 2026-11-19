@@ -351,8 +351,8 @@ int main()
     check(cpu.step(memory, error), "REP enables 16-bit comparison widths");
     check(cpu.step(memory, error), "16-bit LDA prepares CMP");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) != 0 &&
-          (cpu.registers().p & 0x80U) != 0,
-          "16-bit CMP compares both bytes and sets carry and negative");
+          (cpu.registers().p & 0x80U) == 0,
+          "16-bit CMP compares both bytes and sets carry with positive result");
     check(cpu.step(memory, error), "16-bit LDX prepares CPX");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x01U) == 0 &&
           (cpu.registers().p & 0x80U) != 0,
