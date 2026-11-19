@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#252b45"/>
+  <path d="M31 44c-9 0-16 8-18 21l-4 27c-1 9 8 15 16 10l23-15h36l23 15c8 5 17-1 16-10l-4-27c-2-13-9-21-18-21H31z" fill="#d8dbe8" stroke="#101426" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M31 64h25M43.5 51.5v25" stroke="#343b59" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="88" cy="59" r="6" fill="#d94d59"/>
+  <circle cx="101" cy="72" r="6" fill="#e0b34f"/>
+  <circle cx="75" cy="72" r="6" fill="#4f9b72"/>
+  <circle cx="88" cy="85" r="6" fill="#557fc4"/>
+  <text x="64" y="30" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff">SNES</text>
+</svg>
