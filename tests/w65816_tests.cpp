@@ -360,6 +360,44 @@ int main()
     check(cpu.step(memory, error), "16-bit LDY prepares CPY");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "16-bit CPY sets carry and zero for equal operands");
+    loadProgram(memory, {
+        0xCF, 0x00, 0x10, 0x7E,       // CMP $7E1000
+        0xDF, 0xFF, 0x0F, 0x7E        // CMP $7E0FFF,X
+    });
+    memory.write8(0x7E1000, 0x50);
+    memory.write8(0x7E1001, 0x00);
+    cpu.reset(memory);
+    auto compareLong8 = cpu.registers();
+    compareLong8.a = 0xAB50;
+    compareLong8.x = 1;
+    compareLong8.db = 0x12;
+    cpu.setRegisters(compareLong8);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute long compares independently of the data bank");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute long,X adds X to the full 24-bit address");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xCF, 0x00, 0x10, 0x7E,       // CMP $7E1000
+        0xDF, 0xFE, 0x0F, 0x7E        // CMP $7E0FFE,X
+    });
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    cpu.reset(memory);
+    auto compareLong16 = cpu.registers();
+    compareLong16.emulation = false;
+    compareLong16.p = 0x00;
+    compareLong16.a = 0x1234;
+    compareLong16.x = 2;
+    compareLong16.db = 0x12;
+    cpu.setRegisters(compareLong16);
+    check(cpu.step(memory, error), "REP enables 16-bit absolute-long compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute long compares both bytes at the 24-bit address");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute long,X compares both bytes at the indexed 24-bit address");
+
     std::cout << "All 65C816 tests passed.\n";
     loadProgram(memory, {
         0xA9, 0xF0,       // LDA #$F0
