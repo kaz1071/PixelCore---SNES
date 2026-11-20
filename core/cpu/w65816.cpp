@@ -594,6 +594,31 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xCF: // CMP absolute long
+    case 0xDF: { // CMP absolute long,X
+        const std::uint32_t baseAddress =
+            static_cast<std::uint32_t>(fetch8(memory)) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 8U) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 16U);
+        const std::uint32_t address24 = opcode == 0xDF
+            ? (baseAddress + registers_.x) & 0x00FFFFFFU
+            : baseAddress;
+        std::uint16_t operand = memory.read8(address24);
+        if (!accumulator8) {
+            const std::uint32_t nextAddress = (address24 + 1U) & 0x00FFFFFFU;
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(nextAddress)) << 8U));
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & accumulatorMask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0x18: // CLC
         registers_.p = static_cast<std::uint8_t>(registers_.p & ~Carry);
         return true;
