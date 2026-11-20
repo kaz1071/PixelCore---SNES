@@ -942,6 +942,62 @@ int main()
           (cpu.registers().p & 0x80U) == 0,
           "EOR absolute long,X reads both bytes and updates negative");
 
+    loadProgram(memory, {
+        0xAF, 0x00, 0x10, 0x7E,       // LDA $7E1000
+        0x8F, 0x02, 0x10, 0x7E,       // STA $7E1002
+        0xBF, 0x00, 0x10, 0x7E,       // LDA $7E1000,X
+        0x9F, 0x04, 0x10, 0x7E        // STA $7E1004,X
+    });
+    memory.write8(0x7E1000, 0x5A);
+    memory.write8(0x7E1001, 0xA5);
+    memory.write8(0x7E1003, 0x3C);
+    cpu.reset(memory);
+    auto absoluteLongLoads8 = cpu.registers();
+    absoluteLongLoads8.a = 0xAB00;
+    absoluteLongLoads8.x = 1;
+    absoluteLongLoads8.db = 0x12;
+    cpu.setRegisters(absoluteLongLoads8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
+          "LDA absolute long loads from the full 24-bit address and preserves A high byte");
+    check(cpu.step(memory, error) && memory.read8(0x7E1002) == 0x5A,
+          "STA absolute long stores the 8-bit accumulator independently of DB");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABA5,
+          "LDA absolute long,X adds X to the 24-bit address");
+    check(cpu.step(memory, error) && memory.read8(0x7E1005) == 0xA5,
+          "STA absolute long,X stores at the indexed 24-bit address");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xAF, 0x00, 0x10, 0x7E,       // LDA $7E1000
+        0x8F, 0x02, 0x10, 0x7E,       // STA $7E1002
+        0xBF, 0x00, 0x10, 0x7E,       // LDA $7E1000,X
+        0x9F, 0x04, 0x10, 0x7E        // STA $7E1004,X
+    });
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    memory.write8(0x7E1002, 0x00);
+    memory.write8(0x7E1003, 0x00);
+    memory.write8(0x7E1004, 0x00);
+    memory.write8(0x7E1005, 0x00);
+    cpu.reset(memory);
+    auto absoluteLongLoads16 = cpu.registers();
+    absoluteLongLoads16.emulation = false;
+    absoluteLongLoads16.p = 0x00;
+    absoluteLongLoads16.x = 2;
+    absoluteLongLoads16.db = 0x12;
+    cpu.setRegisters(absoluteLongLoads16);
+    check(cpu.step(memory, error), "REP enables 16-bit absolute-long accumulator transfers");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA absolute long reads both bytes at the 24-bit address");
+    check(cpu.step(memory, error) && memory.read8(0x7E1002) == 0x34 &&
+          memory.read8(0x7E1003) == 0x12,
+          "16-bit STA absolute long writes both bytes little-endian");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA absolute long,X reads both indexed bytes");
+    check(cpu.step(memory, error) && memory.read8(0x7E1006) == 0x34 &&
+          memory.read8(0x7E1007) == 0x12,
+          "16-bit STA absolute long,X writes both indexed bytes little-endian");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
