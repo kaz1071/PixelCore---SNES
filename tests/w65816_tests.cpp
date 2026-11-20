@@ -1108,8 +1108,8 @@ int main()
         0xCD, 0x00, 0x10,       // CMP $1000
         0xEC, 0x02, 0x10,       // CPX $1002
         0xCC, 0x04, 0x10,       // CPY $1004
-        0xDD, 0x88, 0xA9,       // CMP $A988,X -> $1000 with X=$5678
-        0xD9, 0x44, 0x65        // CMP $6544,Y -> $1000 with Y=$9ABC
+        0xDD, 0x88, 0xB9,       // CMP $B988,X -> $1000 with X=$5678
+        0xD9, 0x44, 0x75        // CMP $7544,Y -> $1000 with Y=$9ABC
     });
     memory.write8(0x7E1000, 0x34);
     memory.write8(0x7E1001, 0x12);
