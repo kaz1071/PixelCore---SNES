@@ -491,6 +491,54 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         setNegativeZero(registers_.p, result, mask, sign);
         return true;
     }
+    case 0xC5: // CMP direct page
+    case 0xE4: // CPX direct page
+    case 0xC4: { // CPY direct page
+        const std::uint16_t directAddress = static_cast<std::uint16_t>(
+            registers_.d + fetch8(memory));
+        const bool accumulatorCompare = opcode == 0xC5;
+        const std::uint16_t mask = accumulatorCompare ? accumulatorMask : indexMask;
+        const std::uint16_t sign = accumulatorCompare ? accumulatorSign : indexSign;
+        std::uint16_t operand = memory.read8(directAddress);
+        if ((accumulatorCompare && !accumulator8) ||
+            (!accumulatorCompare && !index8)) {
+            const std::uint16_t nextAddress =
+                static_cast<std::uint16_t>(directAddress + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(nextAddress)) << 8U));
+        }
+        const std::uint16_t value = accumulatorCompare
+            ? static_cast<std::uint16_t>(registers_.a & mask)
+            : (opcode == 0xE4 ? registers_.x : registers_.y);
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & mask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, mask, sign);
+        return true;
+    }
+
+    case 0xD5: { // CMP direct page,X
+        const std::uint16_t directAddress = static_cast<std::uint16_t>(
+            registers_.d + fetch8(memory) + registers_.x);
+        std::uint16_t operand = memory.read8(directAddress);
+        if (!accumulator8) {
+            const std::uint16_t nextAddress =
+                static_cast<std::uint16_t>(directAddress + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(nextAddress)) << 8U));
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & accumulatorMask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0xCD: // CMP absolute
     case 0xEC: // CPX absolute
     case 0xCC: { // CPY absolute
