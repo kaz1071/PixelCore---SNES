@@ -834,6 +834,59 @@ int main()
           (cpu.registers().p & 0x80U) == 0,
           "EOR absolute,Y reads both bytes and updates negative");
 
+    loadProgram(memory, {
+        0xA9, 0xF0,                   // LDA #$F0
+        0x2F, 0x00, 0x10, 0x7E,       // AND $7E1000
+        0x0F, 0x01, 0x10, 0x7E,       // ORA $7E1001
+        0x4F, 0x02, 0x10, 0x7E        // EOR $7E1002
+    });
+    memory.write8(0x7E1000, 0x3C);
+    memory.write8(0x7E1001, 0x80);
+    memory.write8(0x7E1002, 0xFF);
+    cpu.reset(memory);
+    auto logicalLong8 = cpu.registers();
+    logicalLong8.a = 0xAB00;
+    logicalLong8.db = 0x12;
+    cpu.setRegisters(logicalLong8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABF0,
+          "LDA prepares 8-bit absolute-long logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB30,
+          "AND absolute long uses the full 24-bit address and preserves A high byte");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABB0,
+          "ORA absolute long reads independently of the data bank");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB4F,
+          "EOR absolute long updates the 8-bit accumulator");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xA9, 0xF0, 0x0F,             // LDA #$0FF0
+        0x2F, 0x00, 0x10, 0x7E,       // AND $7E1000
+        0x0F, 0x02, 0x10, 0x7E,       // ORA $7E1002
+        0x4F, 0x04, 0x10, 0x7E        // EOR $7E1004
+    });
+    memory.write8(0x7E1000, 0xF0);
+    memory.write8(0x7E1001, 0x00);
+    memory.write8(0x7E1002, 0x00);
+    memory.write8(0x7E1003, 0x80);
+    memory.write8(0x7E1004, 0xFF);
+    memory.write8(0x7E1005, 0xFF);
+    cpu.reset(memory);
+    auto logicalLong16 = cpu.registers();
+    logicalLong16.emulation = false;
+    logicalLong16.p = 0x00;
+    logicalLong16.db = 0x12;
+    cpu.setRegisters(logicalLong16);
+    check(cpu.step(memory, error), "REP enables 16-bit absolute-long logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0FF0,
+          "16-bit LDA prepares absolute-long logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00F0,
+          "AND absolute long reads both bytes at the 24-bit address");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x80F0,
+          "ORA absolute long updates the 16-bit negative flag");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x7F0F &&
+          (cpu.registers().p & 0x80U) == 0,
+          "EOR absolute long reads both bytes and updates negative");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
