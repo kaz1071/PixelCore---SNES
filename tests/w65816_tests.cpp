@@ -398,6 +398,55 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP absolute long,X compares both bytes at the indexed 24-bit address");
 
+    loadProgram(memory, {
+        0xC1, 0x1E,                   // CMP ($1E,X) -> pointer at $1020
+        0xD1, 0x20                    // CMP ($20),Y -> pointer $0FFE + Y
+    });
+    memory.write8(0x001020, 0x00);
+    memory.write8(0x001021, 0x10);
+    memory.write8(0x001022, 0xFE);
+    memory.write8(0x001023, 0x0F);
+    memory.write8(0x7E1000, 0x50);
+    cpu.reset(memory);
+    auto compareIndirect8 = cpu.registers();
+    compareIndirect8.a = 0xAB50;
+    compareIndirect8.x = 2;
+    compareIndirect8.y = 2;
+    compareIndirect8.d = 0x1000;
+    compareIndirect8.db = 0x7E;
+    cpu.setRegisters(compareIndirect8);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page,X) follows the indexed pointer in the data bank");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page),Y adds Y to the indirect pointer");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xC1, 0x1E,                   // CMP ($1E,X)
+        0xD1, 0x20                    // CMP ($20),Y
+    });
+    memory.write8(0x001020, 0x00);
+    memory.write8(0x001021, 0x10);
+    memory.write8(0x001022, 0xFE);
+    memory.write8(0x001023, 0x0F);
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    cpu.reset(memory);
+    auto compareIndirect16 = cpu.registers();
+    compareIndirect16.emulation = false;
+    compareIndirect16.p = 0x00;
+    compareIndirect16.a = 0x1234;
+    compareIndirect16.x = 2;
+    compareIndirect16.y = 2;
+    compareIndirect16.d = 0x1000;
+    compareIndirect16.db = 0x7E;
+    cpu.setRegisters(compareIndirect16);
+    check(cpu.step(memory, error), "REP enables 16-bit indirect compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page,X) compares both accumulator bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page),Y compares both bytes at the indexed pointer");
+
     std::cout << "All 65C816 tests passed.\n";
     loadProgram(memory, {
         0xA9, 0xF0,       // LDA #$F0
