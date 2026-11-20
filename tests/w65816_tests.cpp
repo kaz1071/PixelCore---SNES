@@ -1068,6 +1068,76 @@ int main()
           memory.read8(0x7E1043) == 0x00,
           "16-bit STY absolute,X writes the Y register little-endian");
 
+    loadProgram(memory, {
+        0xA9, 0x50,             // LDA #$50
+        0xCD, 0x00, 0x10,       // CMP $1000
+        0xDD, 0xFF, 0x0F,       // CMP $0FFF,X
+        0xD9, 0xFE, 0x0F,       // CMP $0FFE,Y
+        0xA2, 0x40,             // LDX #$40
+        0xEC, 0x02, 0x10,       // CPX $1002
+        0xA0, 0x60,             // LDY #$60
+        0xCC, 0x03, 0x10        // CPY $1003
+    });
+    memory.write8(0x7E1000, 0x50);
+    memory.write8(0x7E1002, 0x40);
+    memory.write8(0x7E1003, 0x60);
+    cpu.reset(memory);
+    auto compare8 = cpu.registers();
+    compare8.db = 0x7E;
+    compare8.x = 1;
+    compare8.y = 2;
+    cpu.setRegisters(compare8);
+    check(cpu.step(memory, error), "LDA prepares 8-bit memory compare tests");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute sets carry and zero when values are equal");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute,X compares from the X-indexed data-bank address");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute,Y compares from the Y-indexed data-bank address");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x40,
+          "LDX prepares CPX absolute");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPX absolute compares the 8-bit X register");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x60,
+          "LDY prepares CPY absolute");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPY absolute compares the 8-bit Y register");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xCD, 0x00, 0x10,       // CMP $1000
+        0xEC, 0x02, 0x10,       // CPX $1002
+        0xCC, 0x04, 0x10,       // CPY $1004
+        0xDD, 0xFE, 0x0F,       // CMP $0FFE,X
+        0xD9, 0xFC, 0x0F        // CMP $0FFC,Y
+    });
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    memory.write8(0x7E1002, 0x78);
+    memory.write8(0x7E1003, 0x56);
+    memory.write8(0x7E1004, 0xBC);
+    memory.write8(0x7E1005, 0x9A);
+    cpu.reset(memory);
+    auto compare16 = cpu.registers();
+    compare16.emulation = false;
+    compare16.p = 0x00;
+    compare16.a = 0x1234;
+    compare16.x = 0x5678;
+    compare16.y = 0x9ABC;
+    compare16.db = 0x7E;
+    cpu.setRegisters(compare16);
+    check(cpu.step(memory, error), "REP enables 16-bit memory compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute compares both accumulator bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPX absolute compares both X register bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPY absolute compares both Y register bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute,X compares both bytes at the indexed address");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP absolute,Y compares both bytes at the indexed address");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
