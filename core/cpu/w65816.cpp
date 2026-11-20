@@ -667,8 +667,8 @@ bool W65816::step(SnesMemory& memory, std::string& error)
                     static_cast<std::uint16_t>(stackOffset + 1U))) << 8U);
             effectiveAddress = static_cast<std::uint16_t>(pointer + registers_.y);
         }
-        const std::uint32_t bankBase =
-            static_cast<std::uint32_t>(registers_.db) << 16U;
+        const std::uint32_t bankBase = opcode == 0xC3
+            ? 0U : (static_cast<std::uint32_t>(registers_.db) << 16U);
         std::uint16_t operand = memory.read8(bankBase | effectiveAddress);
         if (!accumulator8) {
             const std::uint16_t nextAddress =
