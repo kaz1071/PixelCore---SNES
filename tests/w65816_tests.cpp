@@ -779,6 +779,61 @@ int main()
     check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
           "16-bit LDA direct page,X reads both indexed bytes");
 
+    loadProgram(memory, {
+        0xA9, 0xF0,             // LDA #$F0
+        0x39, 0x00, 0x10,       // AND $1000,Y
+        0x19, 0x02, 0x10,       // ORA $1002,Y
+        0x59, 0x04, 0x10        // EOR $1004,Y
+    });
+    memory.write8(0x7E1001, 0x3C);
+    memory.write8(0x7E1003, 0x80);
+    memory.write8(0x7E1005, 0xFF);
+    cpu.reset(memory);
+    auto logicalAbsoluteY8 = cpu.registers();
+    logicalAbsoluteY8.a = 0xAB00;
+    logicalAbsoluteY8.y = 1;
+    logicalAbsoluteY8.db = 0x7E;
+    cpu.setRegisters(logicalAbsoluteY8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABF0,
+          "LDA prepares 8-bit absolute,Y logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB30,
+          "AND absolute,Y uses Y and preserves accumulator high byte");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABB0,
+          "ORA absolute,Y reads from the indexed data-bank address");
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB4F,
+          "EOR absolute,Y updates the 8-bit accumulator");
+
+    loadProgram(memory, {
+        0xC2, 0x20,             // REP #$20: 16-bit accumulator
+        0xA9, 0xF0, 0x0F,       // LDA #$0FF0
+        0x39, 0x00, 0x10,       // AND $1000,Y
+        0x19, 0x02, 0x10,       // ORA $1002,Y
+        0x59, 0x04, 0x10        // EOR $1004,Y
+    });
+    memory.write8(0x7E1002, 0xF0);
+    memory.write8(0x7E1003, 0x00);
+    memory.write8(0x7E1004, 0x00);
+    memory.write8(0x7E1005, 0x80);
+    memory.write8(0x7E1006, 0xFF);
+    memory.write8(0x7E1007, 0xFF);
+    cpu.reset(memory);
+    auto logicalAbsoluteY16 = cpu.registers();
+    logicalAbsoluteY16.emulation = false;
+    logicalAbsoluteY16.p = 0x00;
+    logicalAbsoluteY16.y = 2;
+    logicalAbsoluteY16.db = 0x7E;
+    cpu.setRegisters(logicalAbsoluteY16);
+    check(cpu.step(memory, error), "REP enables 16-bit absolute,Y logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x0FF0,
+          "16-bit LDA prepares absolute,Y logical operations");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x00F0,
+          "AND absolute,Y reads both bytes at the Y-indexed address");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x80F0,
+          "ORA absolute,Y updates the 16-bit negative flag");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x7F0F &&
+          (cpu.registers().p & 0x80U) == 0,
+          "EOR absolute,Y reads both bytes and updates negative");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
