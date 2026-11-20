@@ -1291,6 +1291,41 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP absolute,Y compares both bytes at the indexed address");
 
+    loadProgram(memory, {
+        0xD2, 0x24                    // CMP ($24) -> pointer at $0824
+    });
+    memory.write8(0x000824, 0x00);
+    memory.write8(0x000825, 0x10);
+    memory.write8(0x7E1000, 0x50);
+    cpu.reset(memory);
+    auto compareDirectIndirect8 = cpu.registers();
+    compareDirectIndirect8.a = 0xAB50;
+    compareDirectIndirect8.d = 0x0800;
+    compareDirectIndirect8.db = 0x7E;
+    cpu.setRegisters(compareDirectIndirect8);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page) follows the 16-bit pointer in the data bank");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xD2, 0x24                    // CMP ($24)
+    });
+    memory.write8(0x000824, 0x00);
+    memory.write8(0x000825, 0x10);
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    cpu.reset(memory);
+    auto compareDirectIndirect16 = cpu.registers();
+    compareDirectIndirect16.emulation = false;
+    compareDirectIndirect16.p = 0x00;
+    compareDirectIndirect16.a = 0x1234;
+    compareDirectIndirect16.d = 0x0800;
+    compareDirectIndirect16.db = 0x7E;
+    cpu.setRegisters(compareDirectIndirect16);
+    check(cpu.step(memory, error), "REP enables 16-bit direct-page indirect compare");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (direct page) compares both accumulator bytes");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
