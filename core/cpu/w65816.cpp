@@ -277,6 +277,35 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0x3F: // AND absolute long,X
+    case 0x1F: // ORA absolute long,X
+    case 0x5F: { // EOR absolute long,X
+        const std::uint32_t baseAddress =
+            static_cast<std::uint32_t>(fetch8(memory)) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 8U) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 16U);
+        const std::uint32_t address24 =
+            (baseAddress + registers_.x) & 0x00FFFFFFU;
+        std::uint16_t operand = memory.read8(address24);
+        if (!accumulator8) {
+            const std::uint32_t nextAddress = (address24 + 1U) & 0x00FFFFFFU;
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(memory.read8(nextAddress)) << 8U)
+            );
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result = opcode == 0x3F
+            ? static_cast<std::uint16_t>(value & operand)
+            : (opcode == 0x1F
+                ? static_cast<std::uint16_t>(value | operand)
+                : static_cast<std::uint16_t>(value ^ operand));
+        registers_.a = accumulator8
+            ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | result)
+            : result;
+        setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0x2C: { // BIT absolute
         const std::uint16_t address16 = fetch16(memory);
         const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
