@@ -655,6 +655,37 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xC3: // CMP stack relative
+    case 0xD3: { // CMP (stack relative),Y
+        const std::uint16_t stackOffset = static_cast<std::uint16_t>(
+            registers_.s + fetch8(memory));
+        std::uint16_t effectiveAddress = stackOffset;
+        if (opcode == 0xD3) {
+            const std::uint16_t pointer =
+                static_cast<std::uint16_t>(memory.read8(stackOffset)) |
+                (static_cast<std::uint16_t>(memory.read8(
+                    static_cast<std::uint16_t>(stackOffset + 1U))) << 8U);
+            effectiveAddress = static_cast<std::uint16_t>(pointer + registers_.y);
+        }
+        const std::uint32_t bankBase =
+            static_cast<std::uint32_t>(registers_.db) << 16U;
+        std::uint16_t operand = memory.read8(bankBase | effectiveAddress);
+        if (!accumulator8) {
+            const std::uint16_t nextAddress =
+                static_cast<std::uint16_t>(effectiveAddress + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(bankBase | nextAddress)) << 8U));
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & accumulatorMask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0xCF: // CMP absolute long
     case 0xDF: { // CMP absolute long,X
         const std::uint32_t baseAddress =
