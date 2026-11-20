@@ -1326,6 +1326,51 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP (direct page) compares both accumulator bytes");
 
+    loadProgram(memory, {
+        0xC7, 0x24,                   // CMP [$24] -> $7E1000
+        0xD7, 0x27                    // CMP [$27],Y -> $7E0FFE + Y
+    });
+    memory.write8(0x000824, 0x00);
+    memory.write8(0x000825, 0x10);
+    memory.write8(0x000826, 0x7E);
+    memory.write8(0x000827, 0xFE);
+    memory.write8(0x000828, 0x0F);
+    memory.write8(0x000829, 0x7E);
+    memory.write8(0x7E1000, 0x50);
+    cpu.reset(memory);
+    auto compareLongIndirect8 = cpu.registers();
+    compareLongIndirect8.a = 0xAB50;
+    compareLongIndirect8.y = 2;
+    compareLongIndirect8.d = 0x0800;
+    compareLongIndirect8.db = 0x12;
+    cpu.setRegisters(compareLongIndirect8);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP [direct page] follows a 24-bit pointer independently of DB");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP [direct page],Y adds Y across the 24-bit address");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xC7, 0x24,                   // CMP [$24]
+        0xD7, 0x27                    // CMP [$27],Y
+    });
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    cpu.reset(memory);
+    auto compareLongIndirect16 = cpu.registers();
+    compareLongIndirect16.emulation = false;
+    compareLongIndirect16.p = 0x00;
+    compareLongIndirect16.a = 0x1234;
+    compareLongIndirect16.y = 2;
+    compareLongIndirect16.d = 0x0800;
+    compareLongIndirect16.db = 0x12;
+    cpu.setRegisters(compareLongIndirect16);
+    check(cpu.step(memory, error), "REP enables 16-bit long-indirect compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP [direct page] compares both bytes at the 24-bit pointer");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP [direct page],Y compares both bytes at the indexed 24-bit pointer");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
