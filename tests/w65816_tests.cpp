@@ -1128,6 +1128,9 @@ int main()
           "CPX direct page compares both X register bytes");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CPY direct page compares both Y register bytes");
+    auto directCompareIndex16 = cpu.registers();
+    directCompareIndex16.x = 2;
+    cpu.setRegisters(directCompareIndex16);
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP direct page,X compares both bytes at the indexed address");
 
