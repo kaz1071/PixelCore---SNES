@@ -998,6 +998,76 @@ int main()
           memory.read8(0x7E1007) == 0x12,
           "16-bit STA absolute long,X writes both indexed bytes little-endian");
 
+    loadProgram(memory, {
+        0xBD, 0x00, 0x10,       // LDA $1000,X
+        0xB9, 0x00, 0x10,       // LDA $1000,Y
+        0x9D, 0x10, 0x10,       // STA $1010,X
+        0x99, 0x10, 0x10        // STA $1010,Y
+    });
+    memory.write8(0x7E1002, 0x5A);
+    memory.write8(0x7E1004, 0xA5);
+    cpu.reset(memory);
+    auto absoluteIndexed8 = cpu.registers();
+    absoluteIndexed8.a = 0xAB00;
+    absoluteIndexed8.x = 2;
+    absoluteIndexed8.y = 4;
+    absoluteIndexed8.db = 0x7E;
+    cpu.setRegisters(absoluteIndexed8);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xAB5A,
+          "LDA absolute,X loads from the X-indexed data-bank address");
+    auto setYIndex = cpu.registers();
+    setYIndex.y = 4;
+    cpu.setRegisters(setYIndex);
+    check(cpu.step(memory, error) && cpu.registers().a == 0xABA5,
+          "LDA absolute,Y loads from the Y-indexed data-bank address");
+    check(cpu.step(memory, error) && memory.read8(0x7E1012) == 0xA5,
+          "STA absolute,X stores at the X-indexed address");
+    check(cpu.step(memory, error) && memory.read8(0x7E1014) == 0xA5,
+          "STA absolute,Y stores at the Y-indexed address");
+
+    loadProgram(memory, {
+        0xC2, 0x30,                   // REP #$30: 16-bit accumulator and indexes
+        0xBD, 0x00, 0x10,             // LDA $1000,X
+        0xBE, 0x10, 0x10,             // LDX $1010,Y
+        0xBC, 0x20, 0x10,             // LDY $1020,X
+        0x9E, 0x30, 0x10,             // STX $1030,Y
+        0x9C, 0x40, 0x10              // STY $1040,X
+    });
+    memory.write8(0x7E1002, 0x34);
+    memory.write8(0x7E1003, 0x12);
+    memory.write8(0x7E1014, 0x78);
+    memory.write8(0x7E1015, 0x56);
+    memory.write8(0x7E1022, 0xBC);
+    memory.write8(0x7E1023, 0x9A);
+    cpu.reset(memory);
+    auto absoluteIndexed16 = cpu.registers();
+    absoluteIndexed16.emulation = false;
+    absoluteIndexed16.p = 0x00;
+    absoluteIndexed16.x = 2;
+    absoluteIndexed16.y = 4;
+    absoluteIndexed16.db = 0x7E;
+    cpu.setRegisters(absoluteIndexed16);
+    check(cpu.step(memory, error), "REP enables 16-bit indexed absolute transfers");
+    check(cpu.step(memory, error) && cpu.registers().a == 0x1234,
+          "16-bit LDA absolute,X reads both indexed bytes");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x5678,
+          "16-bit LDX absolute,Y reads both indexed bytes");
+    auto restoreIndex16 = cpu.registers();
+    restoreIndex16.x = 2;
+    cpu.setRegisters(restoreIndex16);
+    check(cpu.step(memory, error) && cpu.registers().y == 0x9ABC,
+          "16-bit LDY absolute,X reads both indexed bytes");
+    auto storeIndexes16 = cpu.registers();
+    storeIndexes16.x = 2;
+    storeIndexes16.y = 4;
+    cpu.setRegisters(storeIndexes16);
+    check(cpu.step(memory, error) && memory.read8(0x7E1034) == 0x78 &&
+          memory.read8(0x7E1035) == 0x56,
+          "16-bit STX absolute,Y writes both bytes little-endian");
+    check(cpu.step(memory, error) && memory.read8(0x7E1042) == 0xBC &&
+          memory.read8(0x7E1043) == 0x9A,
+          "16-bit STY absolute,X writes both bytes little-endian");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
