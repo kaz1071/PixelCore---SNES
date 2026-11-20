@@ -595,7 +595,8 @@ bool W65816::step(SnesMemory& memory, std::string& error)
     }
 
     case 0xC1: // CMP (direct page,X)
-    case 0xD1: { // CMP (direct page),Y
+    case 0xD1: // CMP (direct page),Y
+    case 0xD2: { // CMP (direct page)
         const std::uint16_t pointerAddress = static_cast<std::uint16_t>(
             registers_.d + fetch8(memory) +
             (opcode == 0xC1 ? registers_.x : 0U));
