@@ -1371,6 +1371,52 @@ int main()
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP [direct page],Y compares both bytes at the indexed 24-bit pointer");
 
+    loadProgram(memory, {
+        0xC3, 0x20,                   // CMP $20,S -> $0820
+        0xD3, 0x24                    // CMP ($24,S),Y -> pointer $0FFE + Y
+    });
+    memory.write8(0x7E0820, 0x50);
+    memory.write8(0x000824, 0xFE);
+    memory.write8(0x000825, 0x0F);
+    memory.write8(0x7E1000, 0x50);
+    cpu.reset(memory);
+    auto compareStack8 = cpu.registers();
+    compareStack8.emulation = false;
+    compareStack8.p = 0x30;
+    compareStack8.s = 0x0800;
+    compareStack8.a = 0xAB50;
+    compareStack8.y = 2;
+    compareStack8.db = 0x7E;
+    cpu.setRegisters(compareStack8);
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP stack relative reads from S plus the operand in DB");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (stack relative),Y follows the stack pointer and adds Y");
+
+    loadProgram(memory, {
+        0xC2, 0x20,                   // REP #$20: 16-bit accumulator
+        0xC3, 0x20,                   // CMP $20,S
+        0xD3, 0x24                    // CMP ($24,S),Y
+    });
+    memory.write8(0x7E0820, 0x34);
+    memory.write8(0x7E0821, 0x12);
+    memory.write8(0x7E1000, 0x34);
+    memory.write8(0x7E1001, 0x12);
+    cpu.reset(memory);
+    auto compareStack16 = cpu.registers();
+    compareStack16.emulation = false;
+    compareStack16.p = 0x00;
+    compareStack16.s = 0x0800;
+    compareStack16.a = 0x1234;
+    compareStack16.y = 2;
+    compareStack16.db = 0x7E;
+    cpu.setRegisters(compareStack16);
+    check(cpu.step(memory, error), "REP enables 16-bit stack-relative compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP stack relative compares both accumulator bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP (stack relative),Y compares both bytes at the indexed pointer");
+
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
 }
