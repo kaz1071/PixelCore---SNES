@@ -738,6 +738,62 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xBD: // LDA absolute,X
+    case 0xB9: // LDA absolute,Y
+    case 0xBE: // LDX absolute,Y
+    case 0xBC: // LDY absolute,X
+    case 0x9D: // STA absolute,X
+    case 0x99: // STA absolute,Y
+    case 0x9E: // STX absolute,Y
+    case 0x9C: { // STY absolute,X
+        const std::uint16_t baseAddress = fetch16(memory);
+        const bool useY = opcode == 0xB9 || opcode == 0xBE ||
+                          opcode == 0x99 || opcode == 0x9E;
+        const std::uint16_t index = useY ? registers_.y : registers_.x;
+        const std::uint16_t address16 =
+            static_cast<std::uint16_t>(baseAddress + index);
+        const std::uint32_t effectiveAddress =
+            (static_cast<std::uint32_t>(registers_.db) << 16U) | address16;
+        const bool accumulator = opcode == 0xBD || opcode == 0xB9 ||
+                                 opcode == 0x9D || opcode == 0x99;
+        const bool store = opcode == 0x9D || opcode == 0x99 ||
+                           opcode == 0x9E || opcode == 0x9C;
+        const bool narrow = accumulator ? accumulator8 : index8;
+        if (store) {
+            const std::uint16_t value = accumulator ? registers_.a
+                : (opcode == 0x9E ? registers_.x : registers_.y);
+            memory.write8(effectiveAddress,
+                          static_cast<std::uint8_t>(value & 0x00FFU));
+            if (!narrow) {
+                const std::uint32_t nextAddress =
+                    (static_cast<std::uint32_t>(registers_.db) << 16U) |
+                    static_cast<std::uint16_t>(address16 + 1U);
+                memory.write8(nextAddress, static_cast<std::uint8_t>(value >> 8U));
+            }
+        } else {
+            std::uint16_t value = memory.read8(effectiveAddress);
+            if (!narrow) {
+                const std::uint32_t nextAddress =
+                    (static_cast<std::uint32_t>(registers_.db) << 16U) |
+                    static_cast<std::uint16_t>(address16 + 1U);
+                value = static_cast<std::uint16_t>(
+                    value | (static_cast<std::uint16_t>(memory.read8(nextAddress)) << 8U));
+            }
+            if (accumulator) {
+                registers_.a = accumulator8
+                    ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | value)
+                    : value;
+                setNegativeZero(registers_.p, registers_.a,
+                                accumulatorMask, accumulatorSign);
+            } else {
+                std::uint16_t& target = opcode == 0xBE ? registers_.x : registers_.y;
+                target = value;
+                setNegativeZero(registers_.p, target, indexMask, indexSign);
+            }
+        }
+        return true;
+    }
+
     case 0xDB: // STP
         registers_.stopped = true;
         return true;
