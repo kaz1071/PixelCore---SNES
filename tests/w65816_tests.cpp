@@ -1118,14 +1118,14 @@ int main()
     memory.write8(0x7E1004, 0xBC);
     memory.write8(0x7E1005, 0x9A);
     cpu.reset(memory);
-    auto compare16 = cpu.registers();
-    compare16.emulation = false;
-    compare16.p = 0x00;
-    compare16.a = 0x1234;
-    compare16.x = 0x5678;
-    compare16.y = 0x9ABC;
-    compare16.db = 0x7E;
-    cpu.setRegisters(compare16);
+    auto memoryCompare16 = cpu.registers();
+    memoryCompare16.emulation = false;
+    memoryCompare16.p = 0x00;
+    memoryCompare16.a = 0x1234;
+    memoryCompare16.x = 0x5678;
+    memoryCompare16.y = 0x9ABC;
+    memoryCompare16.db = 0x7E;
+    cpu.setRegisters(memoryCompare16);
     check(cpu.step(memory, error), "REP enables 16-bit memory compare operations");
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
           "CMP absolute compares both accumulator bytes");
