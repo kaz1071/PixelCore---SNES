@@ -1061,12 +1061,12 @@ int main()
     storeIndexes16.x = 2;
     storeIndexes16.y = 4;
     cpu.setRegisters(storeIndexes16);
-    check(cpu.step(memory, error) && memory.read8(0x7E1034) == 0x78 &&
-          memory.read8(0x7E1035) == 0x56,
-          "16-bit STX absolute,Y writes both bytes little-endian");
-    check(cpu.step(memory, error) && memory.read8(0x7E1042) == 0xBC &&
-          memory.read8(0x7E1043) == 0x9A,
-          "16-bit STY absolute,X writes both bytes little-endian");
+    check(cpu.step(memory, error) && memory.read8(0x7E1034) == 0x02 &&
+          memory.read8(0x7E1035) == 0x00,
+          "16-bit STX absolute,Y writes the X register little-endian");
+    check(cpu.step(memory, error) && memory.read8(0x7E1042) == 0x04 &&
+          memory.read8(0x7E1043) == 0x00,
+          "16-bit STY absolute,X writes the Y register little-endian");
 
     std::cout << "All 65C816 tests passed.\\n";
     return 0;
