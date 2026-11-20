@@ -1070,6 +1070,69 @@ int main()
 
     loadProgram(memory, {
         0xA9, 0x50,             // LDA #$50
+        0xC5, 0x20,             // CMP $20
+        0xD5, 0x1F,             // CMP $1F,X
+        0xA2, 0x40,             // LDX #$40
+        0xE4, 0x22,             // CPX $22
+        0xA0, 0x60,             // LDY #$60
+        0xC4, 0x23              // CPY $23
+    });
+    memory.write8(0x001020, 0x50);
+    memory.write8(0x001022, 0x40);
+    memory.write8(0x001023, 0x60);
+    cpu.reset(memory);
+    auto directCompare8 = cpu.registers();
+    directCompare8.d = 0x1000;
+    directCompare8.x = 1;
+    cpu.setRegisters(directCompare8);
+    check(cpu.step(memory, error), "LDA prepares 8-bit direct-page compare tests");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP direct page sets carry and zero for equal values");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP direct page,X uses D plus operand plus X");
+    check(cpu.step(memory, error) && cpu.registers().x == 0x40,
+          "LDX prepares CPX direct page");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPX direct page compares the 8-bit X register");
+    check(cpu.step(memory, error) && cpu.registers().y == 0x60,
+          "LDY prepares CPY direct page");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPY direct page compares the 8-bit Y register");
+
+    loadProgram(memory, {
+        0xC2, 0x30,             // REP #$30: 16-bit accumulator and indexes
+        0xC5, 0x20,             // CMP $20
+        0xE4, 0x22,             // CPX $22
+        0xC4, 0x24,             // CPY $24
+        0xD5, 0x1E              // CMP $1E,X
+    });
+    memory.write8(0x001020, 0x34);
+    memory.write8(0x001021, 0x12);
+    memory.write8(0x001022, 0x78);
+    memory.write8(0x001023, 0x56);
+    memory.write8(0x001024, 0xBC);
+    memory.write8(0x001025, 0x9A);
+    cpu.reset(memory);
+    auto directCompare16 = cpu.registers();
+    directCompare16.emulation = false;
+    directCompare16.p = 0x00;
+    directCompare16.a = 0x1234;
+    directCompare16.x = 0x5678;
+    directCompare16.y = 0x9ABC;
+    directCompare16.d = 0x1000;
+    cpu.setRegisters(directCompare16);
+    check(cpu.step(memory, error), "REP enables 16-bit direct-page compare operations");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP direct page compares both accumulator bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPX direct page compares both X register bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CPY direct page compares both Y register bytes");
+    check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
+          "CMP direct page,X compares both bytes at the indexed address");
+
+    loadProgram(memory, {
+        0xA9, 0x50,             // LDA #$50
         0xCD, 0x00, 0x10,       // CMP $1000
         0xDD, 0xFF, 0x0F,       // CMP $0FFF,X
         0xD9, 0xFE, 0x0F,       // CMP $0FFE,Y
