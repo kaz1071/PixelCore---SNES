@@ -306,6 +306,41 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         return true;
     }
 
+    case 0xAF: // LDA absolute long
+    case 0xBF: // LDA absolute long,X
+    case 0x8F: // STA absolute long
+    case 0x9F: { // STA absolute long,X
+        const std::uint32_t baseAddress =
+            static_cast<std::uint32_t>(fetch8(memory)) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 8U) |
+            (static_cast<std::uint32_t>(fetch8(memory)) << 16U);
+        const bool indexed = opcode == 0xBF || opcode == 0x9F;
+        const std::uint32_t address24 = indexed
+            ? (baseAddress + registers_.x) & 0x00FFFFFFU
+            : baseAddress;
+        const bool store = opcode == 0x8F || opcode == 0x9F;
+        if (store) {
+            memory.write8(address24, static_cast<std::uint8_t>(registers_.a & 0x00FFU));
+            if (!accumulator8) {
+                const std::uint32_t nextAddress = (address24 + 1U) & 0x00FFFFFFU;
+                memory.write8(nextAddress, static_cast<std::uint8_t>(registers_.a >> 8U));
+            }
+        } else {
+            std::uint16_t value = memory.read8(address24);
+            if (!accumulator8) {
+                const std::uint32_t nextAddress = (address24 + 1U) & 0x00FFFFFFU;
+                value = static_cast<std::uint16_t>(
+                    value | (static_cast<std::uint16_t>(memory.read8(nextAddress)) << 8U)
+                );
+            }
+            registers_.a = accumulator8
+                ? static_cast<std::uint16_t>((registers_.a & 0xFF00U) | value)
+                : value;
+            setNegativeZero(registers_.p, registers_.a, accumulatorMask, accumulatorSign);
+        }
+        return true;
+    }
+
     case 0x2C: { // BIT absolute
         const std::uint16_t address16 = fetch16(memory);
         const std::uint32_t bankBase = static_cast<std::uint32_t>(registers_.db) << 16U;
