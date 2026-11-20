@@ -491,6 +491,61 @@ bool W65816::step(SnesMemory& memory, std::string& error)
         setNegativeZero(registers_.p, result, mask, sign);
         return true;
     }
+    case 0xCD: // CMP absolute
+    case 0xEC: // CPX absolute
+    case 0xCC: { // CPY absolute
+        const std::uint16_t address16 = fetch16(memory);
+        const std::uint32_t bankBase =
+            static_cast<std::uint32_t>(registers_.db) << 16U;
+        const bool accumulatorCompare = opcode == 0xCD;
+        const std::uint16_t mask = accumulatorCompare ? accumulatorMask : indexMask;
+        const std::uint16_t sign = accumulatorCompare ? accumulatorSign : indexSign;
+        std::uint16_t operand = memory.read8(bankBase | address16);
+        if ((accumulatorCompare && !accumulator8) ||
+            (!accumulatorCompare && !index8)) {
+            const std::uint16_t nextAddress =
+                static_cast<std::uint16_t>(address16 + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(bankBase | nextAddress)) << 8U));
+        }
+        const std::uint16_t value = accumulatorCompare
+            ? static_cast<std::uint16_t>(registers_.a & mask)
+            : (opcode == 0xEC ? registers_.x : registers_.y);
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & mask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, mask, sign);
+        return true;
+    }
+
+    case 0xDD: // CMP absolute,X
+    case 0xD9: { // CMP absolute,Y
+        const std::uint16_t baseAddress = fetch16(memory);
+        const std::uint16_t index =
+            opcode == 0xDD ? registers_.x : registers_.y;
+        const std::uint16_t address16 =
+            static_cast<std::uint16_t>(baseAddress + index);
+        const std::uint32_t bankBase =
+            static_cast<std::uint32_t>(registers_.db) << 16U;
+        std::uint16_t operand = memory.read8(bankBase | address16);
+        if (!accumulator8) {
+            const std::uint16_t nextAddress =
+                static_cast<std::uint16_t>(address16 + 1U);
+            operand = static_cast<std::uint16_t>(
+                operand | (static_cast<std::uint16_t>(
+                    memory.read8(bankBase | nextAddress)) << 8U));
+        }
+        const std::uint16_t value = registers_.a & accumulatorMask;
+        const std::uint16_t result =
+            static_cast<std::uint16_t>((value - operand) & accumulatorMask);
+        registers_.p = static_cast<std::uint8_t>(
+            (registers_.p & ~Carry) | (value >= operand ? Carry : 0U));
+        setNegativeZero(registers_.p, result, accumulatorMask, accumulatorSign);
+        return true;
+    }
+
     case 0x18: // CLC
         registers_.p = static_cast<std::uint8_t>(registers_.p & ~Carry);
         return true;
