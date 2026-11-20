@@ -1375,7 +1375,7 @@ int main()
         0xC3, 0x20,                   // CMP $20,S -> $0820
         0xD3, 0x24                    // CMP ($24,S),Y -> pointer $0FFE + Y
     });
-    memory.write8(0x7E0820, 0x50);
+    memory.write8(0x000820, 0x50);
     memory.write8(0x000824, 0xFE);
     memory.write8(0x000825, 0x0F);
     memory.write8(0x7E1000, 0x50);
@@ -1398,7 +1398,7 @@ int main()
         0xC3, 0x20,                   // CMP $20,S
         0xD3, 0x24                    // CMP ($24,S),Y
     });
-    memory.write8(0x7E0820, 0x34);
+    memory.write8(0x000820, 0x34);
     memory.write8(0x7E0821, 0x12);
     memory.write8(0x7E1000, 0x34);
     memory.write8(0x7E1001, 0x12);
