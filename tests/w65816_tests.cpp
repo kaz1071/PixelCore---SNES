@@ -400,19 +400,19 @@ int main()
 
     loadProgram(memory, {
         0xC1, 0x1E,                   // CMP ($1E,X) -> pointer at $1020
-        0xD1, 0x20                    // CMP ($20),Y -> pointer $0FFE + Y
+        0xD1, 0x22                    // CMP ($22),Y -> pointer $0FFE + Y
     });
-    memory.write8(0x001020, 0x00);
-    memory.write8(0x001021, 0x10);
-    memory.write8(0x001022, 0xFE);
-    memory.write8(0x001023, 0x0F);
+    memory.write8(0x000820, 0x00);
+    memory.write8(0x000821, 0x10);
+    memory.write8(0x000822, 0xFE);
+    memory.write8(0x000823, 0x0F);
     memory.write8(0x7E1000, 0x50);
     cpu.reset(memory);
     auto compareIndirect8 = cpu.registers();
     compareIndirect8.a = 0xAB50;
     compareIndirect8.x = 2;
     compareIndirect8.y = 2;
-    compareIndirect8.d = 0x1000;
+    compareIndirect8.d = 0x0800;
     compareIndirect8.db = 0x7E;
     cpu.setRegisters(compareIndirect8);
     check(cpu.step(memory, error) && (cpu.registers().p & 0x03U) == 0x03U,
@@ -423,7 +423,7 @@ int main()
     loadProgram(memory, {
         0xC2, 0x20,                   // REP #$20: 16-bit accumulator
         0xC1, 0x1E,                   // CMP ($1E,X)
-        0xD1, 0x20                    // CMP ($20),Y
+        0xD1, 0x22                    // CMP ($22),Y
     });
     memory.write8(0x001020, 0x00);
     memory.write8(0x001021, 0x10);
@@ -438,7 +438,7 @@ int main()
     compareIndirect16.a = 0x1234;
     compareIndirect16.x = 2;
     compareIndirect16.y = 2;
-    compareIndirect16.d = 0x1000;
+    compareIndirect16.d = 0x0800;
     compareIndirect16.db = 0x7E;
     cpu.setRegisters(compareIndirect16);
     check(cpu.step(memory, error), "REP enables 16-bit indirect compare operations");
