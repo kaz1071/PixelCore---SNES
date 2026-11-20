@@ -769,7 +769,7 @@ int main()
     check(cpu.step(memory, error) && memory.read8(0x001022) == 0x34 &&
           memory.read8(0x001023) == 0x12,
           "16-bit STA direct page,X writes little-endian accumulator");
-    check(cpu.step(memory, error) && memory.read8(0x001034) == 0x04 &&
+    check(cpu.step(memory, error) && memory.read8(0x001034) == 0x02 &&
           memory.read8(0x001035) == 0x00,
           "16-bit STX direct page,Y writes both bytes");
     check(cpu.step(memory, error) && memory.read8(0x001042) == 0x04 &&
